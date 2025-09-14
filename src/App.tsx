@@ -1,16 +1,10 @@
-import { LoginPage } from "./pages";
+import AuthPage from "@/pages/AuthPage";
+import HomePage from "@/pages/HomePage";
+import { useAuth } from "./hooks/useAuth";
 
 function App() {
-  return (
-    <>
-      <LoginPage />
-      
-      
-      <div className="fixed bottom-4 left-0 right-0 text-center text-xs text-muted-foreground z-20">
-        <p>&copy; 2025 ProjectFlow. All rights reserved.</p>
-      </div>
-    </>
-  );
+  const { isAuthenticated } = useAuth();
+  return <>{isAuthenticated ? <HomePage /> : <AuthPage />}</>;
 }
 
 export default App;
