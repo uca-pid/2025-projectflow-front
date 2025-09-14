@@ -5,8 +5,8 @@ type AuthContextType = {
   user: User | null | undefined;
   loading: boolean;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, name: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<Response>;
+  signUp: (email: string, name: string, password: string) => Promise<Response>;
   signOut: () => Promise<void>;
 };
 
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    await authClient.signIn.email({ email, password });
+    const response = await authClient.signIn.email({ email, password });
     const session = await authClient.getSession();
     const found_user = session?.data?.user;
     setUser(found_user);
@@ -57,10 +57,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (found_user) {
       setIsAuthenticated(true);
     }
+
+    return response;
   };
 
   const signUp = async (email: string, name: string, password: string) => {
-    await authClient.signUp.email({ email, password, name });
+    const response = await authClient.signUp.email({ email, password, name });
     const session = await authClient.getSession();
     const found_user = session?.data?.user;
     setUser(found_user);
@@ -68,6 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (found_user) {
       setIsAuthenticated(true);
     }
+
+    return response;
   };
 
   const signOut = async () => {

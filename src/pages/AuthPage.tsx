@@ -8,7 +8,8 @@ export default function AuthPage() {
   const { signIn, signUp } = useAuth();
 
   const handleLogin = async (email: string, password: string) => {
-    await signIn(email, password);
+    const res = await signIn(email, password);
+    console.log(res);
   };
 
   const handleSignup = async (
