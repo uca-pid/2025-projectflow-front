@@ -115,6 +115,23 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, theme(colors.border) 1px, transparent 1px),
+      linear-gradient(to bottom, theme(colors.border) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent;
+  }
+  
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
   }
 }

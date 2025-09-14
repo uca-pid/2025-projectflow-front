@@ -1,15 +1,13 @@
-import { Button } from "./components/ui/button";
-
-const prank = () => {
-  window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-};
+import { LoginPage } from "./pages";
 
 function App() {
   return (
     <>
-      <div className="flex w-full h-screen space-y-10 flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold">Tailwind is superior</h1>
-        <Button onClick={prank}>Click here</Button>
+      <LoginPage />
+      
+      
+      <div className="fixed bottom-4 left-0 right-0 text-center text-xs text-muted-foreground z-20">
+        <p>&copy; 2025 ProjectFlow. All rights reserved.</p>
       </div>
     </>
   );
