@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Eye, EyeOff, Lock, Mail, User, FolderKanban } from "lucide-react";
+import { toast } from "sonner";
 import Google from "@mui/icons-material/Google";
 import GitHub from "@mui/icons-material/GitHub";
 
 interface AuthFormProps {
   onLogin?: (email: string, password: string) => void;
+  onSocialLogin?: (provider: string) => void;
   onSignup?: (email: string, name: string, password: string) => void;
   onToggleMode?: () => void;
   mode?: "login" | "signup";
@@ -14,6 +16,7 @@ interface AuthFormProps {
 
 export default function AuthForm({
   onLogin,
+  onSocialLogin,
   onSignup,
   onToggleMode,
   mode = "login",
@@ -32,6 +35,24 @@ export default function AuthForm({
     if (mode === "signup") {
       onSignup?.(email, name, password);
     }
+  };
+
+  const handleSocial = (provider: "github" | "google") => {
+    if (provider !== "github" && provider !== "google") {
+      toast.error("Access Denied - Social Provider Error", {
+        description:
+          "The social provided with which you are trying to log in is not supported.",
+        style: {
+          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+          border: "1px solid #000000",
+          color: "#0f172a",
+          boxShadow:
+            "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+        },
+      });
+      return;
+    }
+    onSocialLogin?.(provider);
   };
 
   const isLogin = mode === "login";
@@ -179,7 +200,7 @@ export default function AuthForm({
           variant="outline"
           className="h-12 border-border hover:bg-accent transition-all duration-200"
           type="button"
-          disabled
+          onClick={() => handleSocial("google")}
         >
           <Google className="h-4 w-4" />
           <span className="ml-2">Google</span>
