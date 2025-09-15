@@ -13,39 +13,41 @@ export default function AuthPage() {
     try {
       await signIn(email, password);
       
-      // Check if authentication succeeded by getting fresh session
+      
       setTimeout(async () => {
         try {
           const session = await authClient.getSession();
           const currentUser = session?.data?.user;
           
           if (currentUser) {
-            toast.success("Welcome back!", {
-              description: "Successfully signed in to your account",
+            toast.success("Access Granted - Welcome Back", {
+              description: "You're successfully logged in and ready to continue working on your projects",
               style: {
-                background: '#ffffff',
-                border: '1px solid #e5e7eb',
-                color: '#111827',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                border: '1px solid #000000',
+                color: '#0f172a',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
               }
             });
           } else {
-            toast.error("Sign in failed", {
-              description: "Invalid email or password",
+            toast.error("Access Denied - Authentication Failed", {
+              description: "Invalid credentials - please double-check your email and password before trying again",
               style: {
-                background: 'rgba(254, 242, 242, 0.95)',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                color: '#dc2626',
+                background: 'linear-gradient(135deg, #fef2f2 0%, #fecaca 100%)',
+                border: '1px solid #000000',
+                color: '#991b1b',
+                boxShadow: '0 20px 25px -5px rgba(239, 68, 68, 0.1), 0 10px 10px -5px rgba(239, 68, 68, 0.04)',
               }
             });
           }
         } catch {
-          toast.error("Sign in failed", {
-            description: "Please check your credentials and try again",
+          toast.error("Connection Failed - Network Issue", {
+            description: "Network error - please check your internet connection and try logging in again",
             style: {
-              background: 'rgba(254, 242, 242, 0.95)',
-              border: '1px solid rgba(239, 68, 68, 0.2)',
-              color: '#dc2626',
+              background: 'linear-gradient(135deg, #fef2f2 0%, #fecaca 100%)',
+              border: '1px solid #000000',
+              color: '#991b1b',
+              boxShadow: '0 20px 25px -5px rgba(239, 68, 68, 0.1), 0 10px 10px -5px rgba(239, 68, 68, 0.04)',
             }
           });
         }
@@ -67,39 +69,41 @@ export default function AuthPage() {
     try {
       await signUp(email, name, password);
       
-      // Check if signup succeeded by getting fresh session
+      
       setTimeout(async () => {
         try {
           const session = await authClient.getSession();
           const currentUser = session?.data?.user;
           
           if (currentUser) {
-            toast.success("Account created!", {
-              description: "Welcome to ProjectFlow",
+            toast.success("Account Ready - Registration Complete", {
+              description: "Welcome to ProjectFlow - your account has been created successfully and you're all set to start",
               style: {
-                background: '#ffffff',
-                border: '1px solid #e5e7eb',
-                color: '#111827',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                border: '1px solid #000000',
+                color: '#0f172a',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
               }
             });
           } else {
-            toast.error("Registration failed", {
-              description: "Please check your information and try again",
+            toast.error("Registration Failed - Account Creation Error", {
+              description: "Unable to create account - please check your information and try the registration process again",
               style: {
-                background: 'rgba(254, 242, 242, 0.95)',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                color: '#dc2626',
+                background: 'linear-gradient(135deg, #fef2f2 0%, #fecaca 100%)',
+                border: '1px solid #000000',
+                color: '#991b1b',
+                boxShadow: '0 20px 25px -5px rgba(239, 68, 68, 0.1), 0 10px 10px -5px rgba(239, 68, 68, 0.04)',
               }
             });
           }
         } catch {
-          toast.error("Registration failed", {
-            description: "Something went wrong. Please try again",
+          toast.error("Registration Error - System Issue", {
+            description: "Something went wrong - there was a system error during registration, please try again",
             style: {
-              background: 'rgba(254, 242, 242, 0.95)',
-              border: '1px solid rgba(239, 68, 68, 0.2)',
-              color: '#dc2626',
+              background: 'linear-gradient(135deg, #fef2f2 0%, #fecaca 100%)',
+              border: '1px solid #000000',
+              color: '#991b1b',
+              boxShadow: '0 20px 25px -5px rgba(239, 68, 68, 0.1), 0 10px 10px -5px rgba(239, 68, 68, 0.04)',
             }
           });
         }

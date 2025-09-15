@@ -13,7 +13,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         style: {
           backdropFilter: 'blur(12px)',
-          borderRadius: '16px',
+          borderRadius: '8px',
           padding: '20px 24px',
           fontSize: '15px',
           fontWeight: '500',
@@ -26,6 +26,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           lineHeight: '1.5',
           left: '50%',
           transform: 'translateX(-50%)',
+          border: '1px solid #000000',
         },
       }}
       {...props}
