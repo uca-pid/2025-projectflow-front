@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PublicRoute from "@/components/auth/PublicRoute";
+import { Toaster } from "@/components/ui/sonner";
 
 import AuthPage from "@/pages/AuthPage";
 import HomePage from "@/pages/HomePage";
@@ -32,6 +33,7 @@ function App() {
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Toaster />
     </BrowserRouter>
   );
 }
