@@ -15,15 +15,24 @@ export default function HomePage() {
           <h1 className="text-4xl font-bold mb-4">¡Panel de Control!</h1>
         </CardTitle>
         <p className="text-gray-600 mb-6 text-center">
-          Bienvenido {user?.name}, accede a diferentes secciones de la aplicación
+          Bienvenido {user?.name}, accede a diferentes secciones de la
+          aplicación
         </p>
         <div className="space-y-4 flex flex-col items-center">
-          <Button 
-            onClick={() => navigate('/')}
+          <Button
+            onClick={() => navigate("/")}
             className="w-48 bg-blue-600 hover:bg-blue-700 text-white"
           >
             Gestión de Tareas
           </Button>
+          {user?.role === "ADMIN" && (
+            <Button
+              onClick={() => navigate("/users")}
+              className="w-48 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              User Management
+            </Button>
+          )}
           <Button onClick={signOut} variant="outline" className="w-48">
             Cerrar Sesión
           </Button>

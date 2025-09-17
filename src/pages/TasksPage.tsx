@@ -43,7 +43,7 @@ export default function TasksPage() {
   }
   if (error) {
     return (
-      <div className="text-red-500 w-screen h-screen items-center justify-center">
+      <div className="text-red-500 flex w-screen h-screen items-center justify-center">
         Error fetching tasks.
       </div>
     );
@@ -227,4 +227,3 @@ export default function TasksPage() {
     </TaskPageLayout>
   );
 }
-
