@@ -19,30 +19,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, User } from "lucide-react";
-
-// Define the User type with BetterAuth fields + custom role
-interface User {
-  id: string;
-  name: string | null;
-  email: string;
-  emailVerified: boolean;
-  image: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  role: string; // Custom field
-}
+import { Loader2, User as UserIcon } from "lucide-react";
+import { type User } from "@/types/user";
 
 interface EditUserModalProps {
   user: User | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onUserUpdated: (user: User) => Promise<void>;
 }
 
 export default function EditUserModal({
   user,
   open,
   onOpenChange,
+  onUserUpdated,
 }: EditUserModalProps) {
   const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState<Partial<User>>({});
@@ -67,34 +58,10 @@ export default function EditUserModal({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
     startTransition(async () => {
-      try {
-        console.log("Updating user:", user.id, formData);
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/user/update/${user.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ userToUpdateData: formData }),
-            credentials: "include",
-          },
-        );
-        console.log(response);
-        const data = await response.json();
-        console.log(data);
-
-        console.log("User updated successfully");
-        onOpenChange(false);
-        setFormData({});
-      } catch (error) {
-        console.error("Unexpected error:", error);
-      }
+      e.preventDefault();
+      if (!user) return;
+      await onUserUpdated(formData as User);
     });
   };
 
@@ -109,7 +76,7 @@ export default function EditUserModal({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
+            <UserIcon className="h-5 w-5" />
             Edit User
           </DialogTitle>
           <DialogDescription>

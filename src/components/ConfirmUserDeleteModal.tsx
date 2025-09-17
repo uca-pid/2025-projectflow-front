@@ -9,24 +9,20 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
-
-// Define the User type
-interface User {
-  id: string;
-  name: string | null;
-  email: string;
-}
+import { type User } from "@/types/user";
 
 interface DeleteUserModalProps {
   user: User | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onUserDelete: () => Promise<void>;
 }
 
 export default function DeleteUserModal({
   user,
   open,
   onOpenChange,
+  onUserDelete,
 }: DeleteUserModalProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -35,22 +31,7 @@ export default function DeleteUserModal({
 
     startTransition(async () => {
       try {
-        // Replace with your actual API call
-        // const result = await deleteUser(user.id);
-        console.log("Deleting user:", user.id);
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/user/delete/${user.id}`,
-          {
-            method: "DELETE",
-            credentials: "include",
-          },
-        );
-        console.log(response);
-        const data = await response.json();
-        console.log(data);
-
-        console.log("User deleted successfully");
+        await onUserDelete();
         onOpenChange(false);
       } catch (error) {
         console.error("Unexpected error:", error);

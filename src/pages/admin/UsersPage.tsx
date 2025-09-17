@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,40 +20,105 @@ import EditUserModal from "@/components/EditUserModal";
 import DeleteUserModal from "@/components/ConfirmUserDeleteModal";
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-
-type User = {
-  id: string;
-  email: string;
-  name: string;
-  emailVerified: boolean;
-  image: string;
-  createdAt: Date;
-  updatedAt: Date;
-  role: string;
-};
+import { type User } from "@/types/user";
 
 export default function AdminUsersPage() {
-  const { user } = useAuth();
   const [users, setUsers] = useState<User[] | null>();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<boolean>(false);
+
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   //Fetch users from API
   useEffect(() => {
-    async function fetchUsers() {
+    try {
+      fetch(`${import.meta.env.VITE_API_URL}/user/getAll`, {
+        credentials: "include",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          setUsers(data.data);
+        });
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) {
+    return;
+  }
+
+  if (error) {
+    return <p>Error</p>;
+  }
+
+  const handleUserUpdate = async (user: User) => {
+    try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/user/getAll`,
+        `${import.meta.env.VITE_API_URL}/user/update/${selectedUser?.id}`,
         {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userToUpdateData: user }),
           credentials: "include",
         },
       );
-      const data = await response.json();
-      setUsers(data.data);
-    }
 
-    fetchUsers();
-  }, [user]);
+      if (!response.ok) {
+        toast.error("Error updating user");
+        throw new Error("Error updating user");
+      }
+
+      const data = await response.json();
+
+      toast.success("User updated successfully");
+      setUsers((prevUsers) =>
+        prevUsers?.map((u) => (u.id === selectedUser?.id ? data.data : u)),
+      );
+      setEditModalOpen(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Unexpected error:", error);
+    }
+  };
+
+  const handleUserDelete = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/user/${selectedUser?.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        toast.error("Error deleting user");
+        throw new Error("Error deleting user");
+      }
+
+      toast.success("User deleted successfully");
+      setUsers((prevUsers) =>
+        prevUsers?.filter((u) => u.id !== selectedUser?.id),
+      );
+
+      setDeleteModalOpen(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Unexpected error:", error);
+    }
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -80,13 +145,16 @@ export default function AdminUsersPage() {
                 <TableRow key={user.id}>
                   <TableCell className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={""} alt={`${user.name?.charAt(0)}`} />
+                      <AvatarImage
+                        src={user.image}
+                        alt={`${user.name?.charAt(0)}`}
+                      />
                       <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="font-medium">{user.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        {user.name || user.id}
+                        {user.id}
                       </div>
                     </div>
                   </TableCell>
@@ -158,11 +226,13 @@ export default function AdminUsersPage() {
         user={selectedUser}
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
+        onUserUpdated={handleUserUpdate}
       />
       <DeleteUserModal
         user={selectedUser}
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
+        onUserDelete={handleUserDelete}
       />
     </div>
   );

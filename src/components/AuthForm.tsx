@@ -222,7 +222,7 @@ export default function AuthForm({
         <button
           type="button"
           onClick={onToggleMode}
-          className="text-primary hover:text-primary/80 font-medium transition-colors"
+          className="text-primary hover:text-primary/80 font-medium transition-colors hover:cursor-pointer"
         >
           {isLogin ? "Sign up" : "Sign in"}
         </button>

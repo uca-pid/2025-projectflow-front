@@ -54,7 +54,9 @@ export default function PasswordReset() {
     setIsLoading(true);
     try {
       const response = await resetPassword(password, token);
-      console.log(response);
+      if (!response.data?.status) {
+        throw new Error("Error resetting password");
+      }
       setIsSuccess(true);
       toast.success("Password reset successfully!");
 
