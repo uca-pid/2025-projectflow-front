@@ -167,12 +167,13 @@ export default function AuthForm({
                 Remember me
               </label>
             </div>
-            <button
+            <a
               type="button"
-              className="text-sm text-primary hover:text-primary/80 transition-colors"
+              className="text-sm text-primary hover:text-primary/80 transition-colors hover:cursor-pointer"
+              href="/password-recovery"
             >
               Forgot password?
-            </button>
+            </a>
           </div>
         )}
 

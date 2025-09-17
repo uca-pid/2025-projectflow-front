@@ -13,6 +13,13 @@ type AuthContextType = {
     password: string,
   ) => Promise<AuthResponse>;
   signOut: () => Promise<void>;
+  requestPasswordReset: (
+    email: string,
+  ) => Promise<{ data: { status: boolean }; error: string }>;
+  resetPassword: (
+    password: string,
+    token: string,
+  ) => Promise<{ data: { status: boolean }; error: string }>;
 };
 
 type User = {
@@ -116,6 +123,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(null);
   };
 
+  const requestPasswordReset = async (email: string) => {
+    const response = await authClient.requestPasswordReset({
+      email,
+      redirectTo: "http://localhost:5173/reset-password",
+    });
+    return response;
+  };
+
+  const resetPassword = async (password: string, token: string) => {
+    const response = await authClient.resetPassword({
+      token,
+      newPassword: password,
+    });
+    return response;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -126,6 +149,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         signInSocial,
         signUp,
         signOut,
+        requestPasswordReset,
+        resetPassword,
       }}
     >
       {children}

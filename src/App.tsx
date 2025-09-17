@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/sonner";
 
 import AuthPage from "@/pages/AuthPage";
 import HomePage from "@/pages/HomePage";
+import PasswordRecovery from "@/pages/PasswordRecovery";
+import PasswordReset from "@/pages/PasswordReset";
 
 function App() {
   return (
@@ -16,6 +18,22 @@ function App() {
           element={
             <PublicRoute>
               <AuthPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/password-recovery"
+          element={
+            <PublicRoute>
+              <PasswordRecovery />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <PublicRoute>
+              <PasswordReset />
             </PublicRoute>
           }
         />
