@@ -6,9 +6,11 @@ import { Toaster } from "@/components/ui/sonner";
 
 import AuthPage from "@/pages/AuthPage";
 import HomePage from "@/pages/HomePage";
+
 import PasswordRecovery from "@/pages/PasswordRecovery";
 import PasswordReset from "@/pages/PasswordReset";
 import UsersPage from "@/pages/admin/UsersPage";
+import TasksPage from "@/pages/TasksPage";
 
 function App() {
   return (
@@ -43,6 +45,15 @@ function App() {
         {/* Protected routes */}
         <Route
           path="/"
+          element={
+            <ProtectedRoute>
+              <TasksPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <HomePage />
