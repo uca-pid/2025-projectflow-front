@@ -167,12 +167,13 @@ export default function AuthForm({
                 Remember me
               </label>
             </div>
-            <button
+            <a
               type="button"
-              className="text-sm text-primary hover:text-primary/80 transition-colors"
+              className="text-sm text-primary hover:text-primary/80 transition-colors hover:cursor-pointer"
+              href="/password-recovery"
             >
               Forgot password?
-            </button>
+            </a>
           </div>
         )}
 
@@ -221,7 +222,7 @@ export default function AuthForm({
         <button
           type="button"
           onClick={onToggleMode}
-          className="text-primary hover:text-primary/80 font-medium transition-colors"
+          className="text-primary hover:text-primary/80 font-medium transition-colors hover:cursor-pointer"
         >
           {isLogin ? "Sign up" : "Sign in"}
         </button>
