@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useState } from "react";
-import { type User } from "src/types/user";
+import { type User } from "@/types/user";
 import { authClient } from "@/lib/auth-client";
 
 type AuthContextType = {
