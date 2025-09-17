@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 import AuthPage from "@/pages/AuthPage";
 import HomePage from "@/pages/HomePage";
+import TasksPage from "@/pages/TasksPage";
 
 function App() {
   return (
@@ -23,6 +24,15 @@ function App() {
         {/* Protected routes */}
         <Route
           path="/"
+          element={
+            <ProtectedRoute>
+              <TasksPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <HomePage />
