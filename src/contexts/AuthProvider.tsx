@@ -30,6 +30,7 @@ type User = {
   emailVerified: boolean;
   name: string;
   image?: string | null | undefined;
+  role: string;
 };
 
 type AuthResponse = {
@@ -44,6 +45,7 @@ type AuthResponse = {
     emailVerified: boolean;
     createdAt: Date;
     updatedAt: Date;
+    role: string;
   };
 };
 

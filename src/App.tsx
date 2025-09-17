@@ -1,12 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PublicRoute from "@/components/auth/PublicRoute";
+import AdminRoute from "@/components/auth/AdminRoute";
 import { Toaster } from "@/components/ui/sonner";
 
 import AuthPage from "@/pages/AuthPage";
 import HomePage from "@/pages/HomePage";
 import PasswordRecovery from "@/pages/PasswordRecovery";
 import PasswordReset from "@/pages/PasswordReset";
+import UsersPage from "@/pages/admin/UsersPage";
 
 function App() {
   return (
@@ -45,6 +47,16 @@ function App() {
             <ProtectedRoute>
               <HomePage />
             </ProtectedRoute>
+          }
+        />
+
+        {/* Admin routes */}
+        <Route
+          path="/users"
+          element={
+            <AdminRoute>
+              <UsersPage />
+            </AdminRoute>
           }
         />
 

@@ -9,7 +9,9 @@ export default function HomePage() {
     <WonderlandBackground>
       <Card className="w-screen/5 h-screen/2 flex items-center justify-center flex-col">
         <CardTitle>
-          <h1 className="text-4xl font-bold mb-4">¡Bienvenido {user?.name}!</h1>
+          <h1 className="text-4xl font-bold mb-4">
+            ¡Bienvenido {user?.name} usted es {user?.role}!
+          </h1>
         </CardTitle>
         <Button onClick={signOut}>Logout</Button>
       </Card>
