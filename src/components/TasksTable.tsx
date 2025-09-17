@@ -1,5 +1,6 @@
 import type { Task } from "@/types/task";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface TasksTableProps {
   tasks: Task[];
@@ -9,14 +10,16 @@ interface TasksTableProps {
 
 function getStatusColor(status: string): string {
   switch (status) {
-    case 'completed':
-      return 'bg-green-100 text-green-800';
-    case 'in-progress':
-      return 'bg-blue-100 text-blue-800';
-    case 'overdue':
-      return 'bg-red-100 text-red-800';
+    case "DONE":
+      return "secondary";
+    case "IN_PROGRESS":
+      return "outline";
+    case "CANCELLED":
+      return "destructive";
+    case "TODO":
+      return "";
     default:
-      return 'bg-gray-100 text-gray-800';
+      return "";
   }
 }
 
@@ -25,13 +28,13 @@ function formatDeadline(date: Date): string {
   const deadline = new Date(date);
   const diffMs = deadline.getTime() - now.getTime();
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-  
-  const formattedDate = deadline.toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+
+  const formattedDate = deadline.toLocaleDateString("es-ES", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
   if (diffDays < 0) {
@@ -45,7 +48,11 @@ function formatDeadline(date: Date): string {
   }
 }
 
-export function TasksTable({ tasks, onEditTask, onDeleteTask }: TasksTableProps) {
+export function TasksTable({
+  tasks,
+  onEditTask,
+  onDeleteTask,
+}: TasksTableProps) {
   if (tasks.length === 0) {
     return (
       <div className="text-center py-12">
@@ -92,16 +99,16 @@ export function TasksTable({ tasks, onEditTask, onDeleteTask }: TasksTableProps)
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">
-                  {formatDeadline(task.deadline)}
+                  {formatDeadline(new Date(task.deadline))}
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(task.status)}`}>
-                  {task.status === 'pending' && 'Pendiente'}
-                  {task.status === 'in-progress' && 'En Progreso'}
-                  {task.status === 'completed' && 'Completada'}
-                  {task.status === 'overdue' && 'Vencida'}
-                </span>
+                <Badge variant={getStatusColor(task.status)}>
+                  {task.status === "TODO" && "Pendiente"}
+                  {task.status === "IN_PROGRESS" && "En Progreso"}
+                  {task.status === "DONE" && "Completada"}
+                  {task.status === "CANCELLED" && "Cancelada"}
+                </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                 <Button
@@ -127,3 +134,4 @@ export function TasksTable({ tasks, onEditTask, onDeleteTask }: TasksTableProps)
     </div>
   );
 }
+

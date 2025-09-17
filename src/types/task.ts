@@ -2,20 +2,11 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  deadline: Date;
-  status: TaskStatus;
-  createdAt: Date;
-  updatedAt: Date;
+  status: string;
+  deadline: string;
+  createdAt: string;
+  updatedAt: string;
+  creatorId: string;
 }
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";
 
-export type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'overdue';
-
-export interface CreateTaskData {
-  title: string;
-  description: string;
-  deadline: Date;
-}
-
-export interface UpdateTaskData extends Partial<CreateTaskData> {
-  status?: TaskStatus;
-}
