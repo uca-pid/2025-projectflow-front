@@ -1,4 +1,5 @@
 import React, { createContext, useEffect, useState } from "react";
+import { type User } from "src/types/user";
 import { authClient } from "@/lib/auth-client";
 
 type AuthContextType = {
@@ -20,17 +21,6 @@ type AuthContextType = {
     password: string,
     token: string,
   ) => Promise<{ data: { status: boolean }; error: string }>;
-};
-
-type User = {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  email: string;
-  emailVerified: boolean;
-  name: string;
-  image?: string | null | undefined;
-  role: string;
 };
 
 type AuthResponse = {
