@@ -3,32 +3,31 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
+import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { usePasswordValidation } from "@/hooks/usePasswordValidation";
+import { PasswordRequirements } from "@/components/PasswordRequirements";
 import WonderlandBackground from "../components/WonderlandBackground";
+
 export default function PasswordReset() {
   const queryParams = new URLSearchParams(window.location.search);
   const token = queryParams.get("token");
   const { resetPassword } = useAuth();
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const validatePassword = (pwd: string) => {
-    return {
-      length: pwd.length >= 8,
-      hasUppercase: /[A-Z]/.test(pwd),
-      hasLowercase: /[a-z]/.test(pwd),
-      hasNumber: /\d/.test(pwd),
-      hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
-    };
-  };
-
-  const passwordValidation = validatePassword(password);
-  const isPasswordValid = Object.values(passwordValidation).every(Boolean);
-  const doPasswordsMatch = password === confirmPassword && password.length > 0;
+  const {
+    password,
+    confirmPassword,
+    setPassword,
+    setConfirmPassword,
+    passwordValidation,
+    isPasswordValid,
+    doPasswordsMatch,
+    showPassword,
+    showConfirmPassword,
+    setShowPassword,
+    setShowConfirmPassword,
+  } = usePasswordValidation();
 
   const handlePasswordReset = async () => {
     if (!token) {
@@ -206,72 +205,12 @@ export default function PasswordReset() {
               </div>
             </div>
 
-            {password && (
-              <div className="space-y-3">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Password Requirements:
-                </p>
-                <div className="grid grid-cols-1 gap-1 text-xs">
-                  <div
-                    className={`flex items-center space-x-2 ${passwordValidation.length ? "text-green-600" : "text-muted-foreground"}`}
-                  >
-                    <div
-                      className={`w-1.5 h-1.5 rounded-full ${passwordValidation.length ? "bg-green-600" : "bg-muted-foreground/30"}`}
-                    />
-                    <span>At least 8 characters</span>
-                  </div>
-                  <div
-                    className={`flex items-center space-x-2 ${passwordValidation.hasUppercase ? "text-green-600" : "text-muted-foreground"}`}
-                  >
-                    <div
-                      className={`w-1.5 h-1.5 rounded-full ${passwordValidation.hasUppercase ? "bg-green-600" : "bg-muted-foreground/30"}`}
-                    />
-                    <span>One uppercase letter</span>
-                  </div>
-                  <div
-                    className={`flex items-center space-x-2 ${passwordValidation.hasLowercase ? "text-green-600" : "text-muted-foreground"}`}
-                  >
-                    <div
-                      className={`w-1.5 h-1.5 rounded-full ${passwordValidation.hasLowercase ? "bg-green-600" : "bg-muted-foreground/30"}`}
-                    />
-                    <span>One lowercase letter</span>
-                  </div>
-                  <div
-                    className={`flex items-center space-x-2 ${passwordValidation.hasNumber ? "text-green-600" : "text-muted-foreground"}`}
-                  >
-                    <div
-                      className={`w-1.5 h-1.5 rounded-full ${passwordValidation.hasNumber ? "bg-green-600" : "bg-muted-foreground/30"}`}
-                    />
-                    <span>One number</span>
-                  </div>
-                  <div
-                    className={`flex items-center space-x-2 ${passwordValidation.hasSpecial ? "text-green-600" : "text-muted-foreground"}`}
-                  >
-                    <div
-                      className={`w-1.5 h-1.5 rounded-full ${passwordValidation.hasSpecial ? "bg-green-600" : "bg-muted-foreground/30"}`}
-                    />
-                    <span>One special character</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {confirmPassword && (
-              <div
-                className={`flex items-center space-x-2 text-xs ${doPasswordsMatch ? "text-green-600" : "text-red-600"}`}
-              >
-                {doPasswordsMatch ? (
-                  <CheckCircle className="w-4 h-4" />
-                ) : (
-                  <AlertCircle className="w-4 h-4" />
-                )}
-                <span>
-                  {doPasswordsMatch
-                    ? "Passwords match"
-                    : "Passwords do not match"}
-                </span>
-              </div>
-            )}
+            <PasswordRequirements
+              password={password}
+              confirmPassword={confirmPassword}
+              passwordValidation={passwordValidation}
+              doPasswordsMatch={doPasswordsMatch}
+            />
 
             <Button
               onClick={handlePasswordReset}

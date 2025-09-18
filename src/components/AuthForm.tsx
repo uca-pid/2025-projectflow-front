@@ -5,6 +5,8 @@ import { Eye, EyeOff, Lock, Mail, User, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 import Google from "@mui/icons-material/Google";
 import GitHub from "@mui/icons-material/GitHub";
+import { usePasswordValidation } from "@/hooks/usePasswordValidation";
+import { PasswordRequirements } from "@/components/PasswordRequirements";
 
 interface AuthFormProps {
   onLogin?: (email: string, password: string) => void;
@@ -22,17 +24,56 @@ export default function AuthForm({
   mode = "login",
 }: AuthFormProps) {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
+
+  // For login mode, use simple state
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // For signup mode, use the validation hook
+  const {
+    password: signupPassword,
+    confirmPassword,
+    setPassword: setSignupPassword,
+    setConfirmPassword,
+    passwordValidation,
+    isPasswordValid,
+    doPasswordsMatch,
+    showPassword: showSignupPassword,
+    showConfirmPassword,
+    setShowPassword: setShowSignupPassword,
+    setShowConfirmPassword,
+  } = usePasswordValidation();
+
+  const isLogin = mode === "login";
+
+  // Use appropriate password state based on mode
+  const password = isLogin ? loginPassword : signupPassword;
+  const setPassword = isLogin ? setLoginPassword : setSignupPassword;
+  const showPassword = isLogin ? showLoginPassword : showSignupPassword;
+  const setShowPassword = isLogin
+    ? setShowLoginPassword
+    : setShowSignupPassword;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (mode === "login") {
       onLogin?.(email, password);
     }
 
     if (mode === "signup") {
+      // Validate signup requirements
+      if (!isPasswordValid) {
+        toast.error("Password does not meet requirements");
+        return;
+      }
+
+      if (!doPasswordsMatch) {
+        toast.error("Passwords do not match");
+        return;
+      }
+
       onSignup?.(email, name, password);
     }
   };
@@ -54,8 +95,6 @@ export default function AuthForm({
     }
     onSocialLogin?.(provider);
   };
-
-  const isLogin = mode === "login";
 
   return (
     <div className="w-full max-w-md space-y-8 bg-card rounded-2xl border border-border p-8 shadow-2xl backdrop-blur-sm">
@@ -152,6 +191,50 @@ export default function AuthForm({
           </div>
         </div>
 
+        {!isLogin && (
+          <div className="space-y-2">
+            <label
+              htmlFor="confirmPassword"
+              className="text-sm font-medium text-foreground"
+            >
+              Confirm Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="pl-10 pr-10 h-12 text-base focus-visible:ring-1 transition-all duration-200"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Password Requirements - Only show for signup */}
+        {!isLogin && (
+          <PasswordRequirements
+            password={signupPassword}
+            confirmPassword={confirmPassword}
+            passwordValidation={passwordValidation}
+            doPasswordsMatch={doPasswordsMatch}
+          />
+        )}
+
         {isLogin && (
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -180,6 +263,7 @@ export default function AuthForm({
         <Button
           type="submit"
           className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+          disabled={!isLogin && (!isPasswordValid || !doPasswordsMatch)}
         >
           {isLogin ? "Sign In" : "Create Account"}
         </Button>
