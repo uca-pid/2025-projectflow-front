@@ -29,18 +29,19 @@ export default function TasksPage() {
         .then((response) => response.json())
         .then((data) => {
           setTasks(data.data);
-          setLoading(false);
         });
     } catch (error) {
-      setLoading(false);
       setError(true);
       console.error("Error fetching tasks:", error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   if (loading) {
     return <LoadingPage />;
   }
+
   if (error) {
     return (
       <div className="text-red-500 flex w-screen h-screen items-center justify-center">

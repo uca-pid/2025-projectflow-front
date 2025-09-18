@@ -75,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (found_user) {
       setIsAuthenticated(true);
+      setLoading(false);
     }
 
     return response as AuthResponse;
@@ -91,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (found_user) {
       setIsAuthenticated(true);
+      setLoading(false);
     }
 
     return response as AuthResponse;
@@ -104,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (found_user) {
       setIsAuthenticated(true);
+      setLoading(false);
     }
 
     return response as AuthResponse;
