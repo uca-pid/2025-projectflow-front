@@ -44,14 +44,15 @@ function App() {
 
         {/* Protected routes */}
         <Route
-          path="/"
+          path="/tasks"
           element={
             <ProtectedRoute>
               <TasksPage />
             </ProtectedRoute>
           }
         />
-        
+
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route
           path="/dashboard"
           element={

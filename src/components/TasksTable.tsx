@@ -1,6 +1,7 @@
 import type { Task } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Clock, Check, LoaderCircle, Ban } from "lucide-react";
 
 interface TasksTableProps {
   tasks: Task[];
@@ -8,20 +9,35 @@ interface TasksTableProps {
   onDeleteTask: (taskId: string) => void;
 }
 
-function getStatusColor(
+function getStatusVariant(
   status: string,
 ): "secondary" | "outline" | "destructive" | "default" | undefined {
   switch (status) {
     case "DONE":
       return "secondary";
     case "IN_PROGRESS":
-      return "outline";
+      return "default";
     case "CANCELLED":
       return "destructive";
     case "TODO":
-      return "default";
+      return "outline";
     default:
-      return "default";
+      return undefined;
+  }
+}
+
+function getStatusTailwind(status: string): string {
+  switch (status) {
+    case "DONE":
+      return "bg-green-100 border border-green-400 text-green-800";
+    case "IN_PROGRESS":
+      return "bg-blue-100 border border-blue-400 text-blue-800";
+    case "CANCELLED":
+      return "bg-red-100 border border-red-400 text-red-800";
+    case "TODO":
+      return "bg-gray-100 border border-gray-400 text-gray-800";
+    default:
+      return "bg-gray-100 border border-gray-400 text-gray-800";
   }
 }
 
@@ -105,11 +121,34 @@ export function TasksTable({
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <Badge variant={getStatusColor(task.status)}>
-                  {task.status === "TODO" && "Pending"}
-                  {task.status === "IN_PROGRESS" && "In Progress"}
-                  {task.status === "DONE" && "Completed"}
-                  {task.status === "CANCELLED" && "Cancelled"}
+                <Badge
+                  className={getStatusTailwind(task.status)}
+                  variant={getStatusVariant(task.status)}
+                >
+                  {task.status === "TODO" && (
+                    <>
+                      <Clock className="w-3 h-3 mr-1" />
+                      Pending
+                    </>
+                  )}
+                  {task.status === "IN_PROGRESS" && (
+                    <>
+                      <LoaderCircle className="w-3 h-3 mr-1 animate-spin" />
+                      In Progress
+                    </>
+                  )}
+                  {task.status === "DONE" && (
+                    <>
+                      <Check className="w-3 h-3 mr-1" />
+                      Completed
+                    </>
+                  )}
+                  {task.status === "CANCELLED" && (
+                    <>
+                      <Ban className="w-4 h-4 mr-1" />
+                      Cancelled
+                    </>
+                  )}
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">

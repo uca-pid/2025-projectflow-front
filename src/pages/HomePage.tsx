@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import WonderlandBackground from "@/components/WonderlandBackground";
+import { LogOut, User, ClipboardList } from "lucide-react";
 
 export default function HomePage() {
   const { user, signOut } = useAuth();
@@ -12,28 +13,28 @@ export default function HomePage() {
     <WonderlandBackground>
       <Card className="w-screen/5 h-screen/2 flex items-center justify-center flex-col">
         <CardTitle>
-          <h1 className="text-4xl font-bold mb-4">Control Panel!</h1>
+          <h1 className="text-4xl font-bold">Control Panel!</h1>
         </CardTitle>
         <p className="text-gray-600 mb-6 text-center">
-          Welcome {user?.name}, access different sections of the
-          application
+          Welcome {user?.name}, access different pages:
         </p>
         <div className="space-y-4 flex flex-col items-center">
-          <Button
-            onClick={() => navigate("/")}
-            className="w-48 bg-blue-600 hover:bg-blue-700 text-white"
-          >
+          <Button className="w-48" onClick={() => navigate("/tasks")}>
+            <ClipboardList className="h-4 w-4" />
             Task Management
           </Button>
           {user?.role === "ADMIN" && (
-            <Button
-              onClick={() => navigate("/users")}
-              className="w-48 bg-blue-600 hover:bg-blue-700 text-white"
-            >
+            <Button className="w-48" onClick={() => navigate("/users")}>
+              <User className="h-4 w-4" />
               User Management
             </Button>
           )}
-          <Button onClick={signOut} variant="outline" className="w-48">
+          <Button
+            variant="outline"
+            className="text-red-600 w-48"
+            onClick={signOut}
+          >
+            <LogOut className="h-4 w-4" />
             Sign Out
           </Button>
         </div>

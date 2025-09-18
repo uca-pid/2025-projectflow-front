@@ -4,7 +4,7 @@ export default function WonderlandBackground({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 absolute x-0 y-0 overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-30"></div>
 
       <div className="absolute top-10 left-10 w-64 h-64 bg-blue-400/30 rounded-full blur-2xl animate-pulse"></div>

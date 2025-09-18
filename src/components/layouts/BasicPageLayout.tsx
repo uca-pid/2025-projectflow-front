@@ -3,15 +3,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { ProfileModal } from "@/components/ProfileModal";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { FolderKanbanIcon } from "lucide-react";
+import { FolderKanbanIcon, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default function TaskPageLayout({ children }: LayoutProps) {
+export default function BasicPageLayout({ children }: LayoutProps) {
   const { user, signOut } = useAuth();
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -19,11 +21,17 @@ export default function TaskPageLayout({ children }: LayoutProps) {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <FolderKanbanIcon className="w-6 h-6" />
+            <div className="flex items-center">
+              <FolderKanbanIcon className="w-8 h-8" />
+              <Button
+                variant="link"
+                className="hover:cursor-pointer"
+                onClick={() => {
+                  navigate("/");
+                }}
+              >
                 <h1 className="text-xl font-bold text-gray-900">ProjectFlow</h1>
-              </div>
+              </Button>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -34,21 +42,24 @@ export default function TaskPageLayout({ children }: LayoutProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowProfileModal(true)}
-                className="flex items-center space-x-2 h-10"
+                className="flex items-center space-x-2"
               >
-                <Avatar className="h-8 w-8 rounded-full">
+                <Avatar className="h-6 w-6 rounded-full">
                   <AvatarImage src={user?.image} />
-                  <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-black text-white">
+                    {user?.name?.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
                 <span className="hidden sm:block">Profile</span>
               </Button>
+
               <Button
                 variant="outline"
-                size="sm"
+                className="text-red-600"
                 onClick={signOut}
-                className="text-red-600 hover:text-red-700 hover:border-red-300 h-10"
               >
-                Salir
+                <LogOut className="h-4 w-4" />
+                Sign Out
               </Button>
             </div>
           </div>

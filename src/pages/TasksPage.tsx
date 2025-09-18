@@ -5,9 +5,10 @@ import { EditTaskModal } from "@/components/EditTaskModal";
 import { DeleteTaskModal } from "@/components/DeleteTaskModal";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import TaskPageLayout from "@/components/layouts/TaskPageLayout";
+import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import LoadingPage from "./LoadingPage";
 import { type Task } from "@/types/task";
+import { Plus } from "lucide-react";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -145,7 +146,7 @@ export default function TasksPage() {
   };
 
   return (
-    <TaskPageLayout>
+    <BasicPageLayout>
       {/* Header */}
       <div className="mb-8">
         <div className="flex justify-between items-center">
@@ -157,11 +158,9 @@ export default function TasksPage() {
               Organize and manage your tasks with specific deadlines
             </p>
           </div>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            New Task
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="h-4 w-4" />
+            Task
           </Button>
         </div>
       </div>
@@ -188,7 +187,7 @@ export default function TasksPage() {
           <div className="text-2xl font-bold text-red-600">
             {tasks.filter((task) => task.status === "CANCELLED").length}
           </div>
-          <div className="text-gray-600">Overdue</div>
+          <div className="text-gray-600">Cancelled</div>
         </div>
       </div>
 
@@ -225,6 +224,6 @@ export default function TasksPage() {
         onConfirmDelete={handleConfirmDelete}
         task={selectedTask}
       />
-    </TaskPageLayout>
+    </BasicPageLayout>
   );
 }

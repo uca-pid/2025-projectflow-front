@@ -20,7 +20,7 @@ import EditUserModal from "@/components/EditUserModal";
 import DeleteUserModal from "@/components/ConfirmUserDeleteModal";
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import TaskPageLayout from "@/components/layouts/TaskPageLayout";
+import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import { type User } from "@/types/user";
 
 export default function AdminUsersPage() {
@@ -122,7 +122,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <TaskPageLayout>
+    <BasicPageLayout>
       <div className="container mx-auto py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">User Management</h1>
@@ -239,6 +239,6 @@ export default function AdminUsersPage() {
           onUserDelete={handleUserDelete}
         />
       </div>
-    </TaskPageLayout>
+    </BasicPageLayout>
   );
 }
