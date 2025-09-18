@@ -8,7 +8,9 @@ interface TasksTableProps {
   onDeleteTask: (taskId: string) => void;
 }
 
-function getStatusColor(status: string): "secondary" | "outline" | "destructive" | "default" | undefined {
+function getStatusColor(
+  status: string,
+): "secondary" | "outline" | "destructive" | "default" | undefined {
   switch (status) {
     case "DONE":
       return "secondary";
@@ -104,10 +106,10 @@ export function TasksTable({
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <Badge variant={getStatusColor(task.status)}>
-                  {task.status === "TODO" && "Pendiente"}
-                  {task.status === "IN_PROGRESS" && "En Progreso"}
-                  {task.status === "DONE" && "Completada"}
-                  {task.status === "CANCELLED" && "Cancelada"}
+                  {task.status === "TODO" && "Pending"}
+                  {task.status === "IN_PROGRESS" && "In Progress"}
+                  {task.status === "DONE" && "Completed"}
+                  {task.status === "CANCELLED" && "Cancelled"}
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
@@ -134,4 +136,3 @@ export function TasksTable({
     </div>
   );
 }
-
