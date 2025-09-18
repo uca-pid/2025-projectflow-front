@@ -151,17 +151,17 @@ export default function TasksPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Gestión de Tareas
+              Task Management
             </h1>
             <p className="mt-2 text-gray-600">
-              Organiza y gestiona tus tareas con fechas límite específicas
+              Organize and manage your tasks with specific deadlines
             </p>
           </div>
           <Button
             onClick={() => setShowCreateModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Nueva Tarea
+            New Task
           </Button>
         </div>
       </div>
@@ -170,25 +170,25 @@ export default function TasksPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-gray-900">{tasks.length}</div>
-          <div className="text-gray-600">Total de Tareas</div>
+          <div className="text-gray-600">Total Tasks</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-blue-600">
             {tasks.filter((task) => task.status === "IN_PROGRESS").length}
           </div>
-          <div className="text-gray-600">En Progreso</div>
+          <div className="text-gray-600">In Progress</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-green-600">
             {tasks.filter((task) => task.status === "DONE").length}
           </div>
-          <div className="text-gray-600">Completadas</div>
+          <div className="text-gray-600">Completed</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-red-600">
             {tasks.filter((task) => task.status === "CANCELLED").length}
           </div>
-          <div className="text-gray-600">Vencidas</div>
+          <div className="text-gray-600">Overdue</div>
         </div>
       </div>
 

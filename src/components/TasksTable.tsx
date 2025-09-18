@@ -8,7 +8,7 @@ interface TasksTableProps {
   onDeleteTask: (taskId: string) => void;
 }
 
-function getStatusColor(status: string): string {
+function getStatusColor(status: string): "secondary" | "outline" | "destructive" | "default" | undefined {
   switch (status) {
     case "DONE":
       return "secondary";
@@ -17,9 +17,9 @@ function getStatusColor(status: string): string {
     case "CANCELLED":
       return "destructive";
     case "TODO":
-      return "";
+      return "default";
     default:
-      return "";
+      return "default";
   }
 }
 
@@ -29,7 +29,7 @@ function formatDeadline(date: Date): string {
   const diffMs = deadline.getTime() - now.getTime();
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-  const formattedDate = deadline.toLocaleDateString("es-ES", {
+  const formattedDate = deadline.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -38,13 +38,13 @@ function formatDeadline(date: Date): string {
   });
 
   if (diffDays < 0) {
-    return `${formattedDate} (Vencida)`;
+    return `${formattedDate} (Overdue)`;
   } else if (diffDays === 0) {
-    return `${formattedDate} (Hoy)`;
+    return `${formattedDate} (Today)`;
   } else if (diffDays === 1) {
-    return `${formattedDate} (Mañana)`;
+    return `${formattedDate} (Tomorrow)`;
   } else {
-    return `${formattedDate} (${diffDays} días)`;
+    return `${formattedDate} (${diffDays} days)`;
   }
 }
 
@@ -56,8 +56,8 @@ export function TasksTable({
   if (tasks.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-500 text-lg mb-2">No hay tareas creadas</div>
-        <p className="text-gray-400">Crea tu primera tarea para empezar</p>
+        <div className="text-gray-500 text-lg mb-2">No tasks created</div>
+        <p className="text-gray-400">Create your first task to get started</p>
       </div>
     );
   }
@@ -68,19 +68,19 @@ export function TasksTable({
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Tarea
+              Task
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Descripción
+              Description
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Fecha límite
+              Deadline
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Estado
+              Status
             </th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Acciones
+              Actions
             </th>
           </tr>
         </thead>
@@ -116,7 +116,7 @@ export function TasksTable({
                   size="sm"
                   onClick={() => onEditTask(task)}
                 >
-                  Editar
+                  Edit
                 </Button>
                 <Button
                   variant="outline"
@@ -124,7 +124,7 @@ export function TasksTable({
                   onClick={() => onDeleteTask(task.id)}
                   className="text-red-600 hover:text-red-700 hover:border-red-300"
                 >
-                  Eliminar
+                  Delete
                 </Button>
               </td>
             </tr>

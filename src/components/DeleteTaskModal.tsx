@@ -32,12 +32,12 @@ export function DeleteTaskModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Eliminar Tarea</DialogTitle>
+          <DialogTitle>Delete Task</DialogTitle>
         </DialogHeader>
 
         <div className="py-4">
           <p className="text-gray-600 mb-4">
-            ¿Estás seguro de que deseas eliminar la tarea?
+            Are you sure you want to delete this task?
           </p>
 
           {task && (
@@ -45,8 +45,8 @@ export function DeleteTaskModal({
               <h4 className="font-medium text-gray-900 mb-2">{task.title}</h4>
               <p className="text-gray-600 text-sm mb-2">{task.description}</p>
               <p className="text-gray-500 text-xs">
-                Fecha límite:{" "}
-                {new Date(task.deadline).toLocaleString("es-ES", {
+                Deadline:{" "}
+                {new Date(task.deadline).toLocaleString("en-US", {
                   year: "numeric",
                   month: "short",
                   day: "numeric",
@@ -58,20 +58,20 @@ export function DeleteTaskModal({
           )}
 
           <p className="text-red-600 text-sm mt-4 font-medium">
-            Esta acción no se puede deshacer.
+            This action cannot be undone.
           </p>
         </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
+            Cancel
           </Button>
           <Button
             type="button"
             onClick={handleDelete}
             className="bg-red-600 hover:bg-red-700 text-white"
           >
-            Eliminar
+            Delete
           </Button>
         </DialogFooter>
       </DialogContent>

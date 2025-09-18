@@ -47,21 +47,21 @@ export function EditTaskModal({
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "El título es requerido";
+      newErrors.title = "Title is required";
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = "La descripción es requerida";
+      newErrors.description = "Description is required";
     }
 
     if (!formData.deadline) {
-      newErrors.deadline = "La fecha límite es requerida";
+      newErrors.deadline = "Deadline is required";
     } else {
       const deadlineDate = new Date(formData.deadline);
       const now = new Date();
       if (deadlineDate <= now && formData.status !== "DONE") {
         newErrors.deadline =
-          "La fecha límite debe ser futura para tareas no completadas";
+          "Deadline must be in the future for uncompleted tasks";
       }
     }
 
@@ -116,7 +116,7 @@ export function EditTaskModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Editar Tarea</DialogTitle>
+          <DialogTitle>Edit Task</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,14 +125,14 @@ export function EditTaskModal({
               htmlFor="edit-title"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Título *
+              Title *
             </label>
             <Input
               id="edit-title"
               type="text"
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
-              placeholder="Título de la tarea"
+              placeholder="Task title"
               className={errors.title ? "border-red-500" : ""}
             />
             {errors.title && (
@@ -145,13 +145,13 @@ export function EditTaskModal({
               htmlFor="edit-description"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Descripción *
+              Description *
             </label>
             <textarea
               id="edit-description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Descripción detallada de la tarea"
+              placeholder="Detailed task description"
               rows={3}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.description ? "border-red-500" : "border-gray-300"
@@ -167,7 +167,7 @@ export function EditTaskModal({
               htmlFor="edit-status"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Estado
+              Status
             </label>
             <select
               id="edit-status"
@@ -175,10 +175,10 @@ export function EditTaskModal({
               onChange={(e) => handleInputChange("status", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="TODO">Pendiente</option>
-              <option value="IN_PROGRESS">En Progreso</option>
-              <option value="CANCELLED">Cancelada</option>
-              <option value="DONE">Completada</option>
+              <option value="TODO">Pending</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="DONE">Completed</option>
             </select>
           </div>
 
@@ -187,7 +187,7 @@ export function EditTaskModal({
               htmlFor="edit-deadline"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Fecha y Hora Límite *
+              Deadline Date and Time *
             </label>
             <Input
               id="edit-deadline"
@@ -204,9 +204,9 @@ export function EditTaskModal({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>
-              Cancelar
+              Cancel
             </Button>
-            <Button type="submit">Actualizar Tarea</Button>
+            <Button type="submit">Update Task</Button>
           </DialogFooter>
         </form>
       </DialogContent>

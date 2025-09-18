@@ -36,7 +36,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Perfil de Usuario</DialogTitle>
+          <DialogTitle>User Profile</DialogTitle>
         </DialogHeader>
 
         <div className="py-4">
@@ -53,11 +53,11 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
               <div className="space-y-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-medium text-gray-900 mb-3">
-                    Información Personal
+                    Personal Information
                   </h3>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Nombre:</span>
+                      <span className="text-gray-600">Name:</span>
                       <span className="font-medium text-gray-900">
                         {user.name}
                       </span>
@@ -69,7 +69,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">ID de Usuario:</span>
+                      <span className="text-gray-600">User ID:</span>
                       <span className="font-medium text-gray-900 font-mono text-sm">
                         {user.id.substring(0, 8)}...
                       </span>
@@ -80,27 +80,27 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
                 {/* Account Information */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-medium text-gray-900 mb-3">
-                    Información de Cuenta
+                    Account Information
                   </h3>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Cuenta creada:</span>
+                      <span className="text-gray-600">Account created:</span>
                       <span className="font-medium text-gray-900">
                         {formatDate(user.createdAt)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">
-                        Última actualización:
+                        Last updated:
                       </span>
                       <span className="font-medium text-gray-900">
                         {formatDate(user.updatedAt)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Estado:</span>
+                      <span className="text-gray-600">Status:</span>
                       <span className="inline-flex px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                        Activo
+                        Active
                       </span>
                     </div>
                   </div>
@@ -112,14 +112,14 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            Cerrar
+            Close
           </Button>
           <Button
             type="button"
             onClick={handleLogout}
             className="bg-red-600 hover:bg-red-700 text-white"
           >
-            Cerrar Sesión
+            Sign Out
           </Button>
         </DialogFooter>
       </DialogContent>

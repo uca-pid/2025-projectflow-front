@@ -12,18 +12,18 @@ export default function HomePage() {
     <WonderlandBackground>
       <Card className="w-screen/5 h-screen/2 flex items-center justify-center flex-col">
         <CardTitle>
-          <h1 className="text-4xl font-bold mb-4">¡Panel de Control!</h1>
+          <h1 className="text-4xl font-bold mb-4">Control Panel!</h1>
         </CardTitle>
         <p className="text-gray-600 mb-6 text-center">
-          Bienvenido {user?.name}, accede a diferentes secciones de la
-          aplicación
+          Welcome {user?.name}, access different sections of the
+          application
         </p>
         <div className="space-y-4 flex flex-col items-center">
           <Button
             onClick={() => navigate("/")}
             className="w-48 bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Gestión de Tareas
+            Task Management
           </Button>
           {user?.role === "ADMIN" && (
             <Button
@@ -34,7 +34,7 @@ export default function HomePage() {
             </Button>
           )}
           <Button onClick={signOut} variant="outline" className="w-48">
-            Cerrar Sesión
+            Sign Out
           </Button>
         </div>
       </Card>

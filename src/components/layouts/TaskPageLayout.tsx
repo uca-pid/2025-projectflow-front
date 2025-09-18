@@ -28,7 +28,7 @@ export default function TaskPageLayout({ children }: LayoutProps) {
 
             <div className="flex items-center space-x-4">
               <span className="text-gray-600 text-sm hidden sm:block">
-                ¡Hola, {user?.name}!
+                Hello, {user?.name}!
               </span>
               <Button
                 variant="outline"
@@ -40,7 +40,7 @@ export default function TaskPageLayout({ children }: LayoutProps) {
                   <AvatarImage src={user?.image} />
                   <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <span className="hidden sm:block">Perfil</span>
+                <span className="hidden sm:block">Profile</span>
               </Button>
               <Button
                 variant="outline"

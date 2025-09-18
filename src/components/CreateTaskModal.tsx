@@ -32,20 +32,20 @@ export function CreateTaskModal({
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "El título es requerido";
+      newErrors.title = "Title is required";
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = "La descripción es requerida";
+      newErrors.description = "Description is required";
     }
 
     if (!formData.deadline) {
-      newErrors.deadline = "La fecha límite es requerida";
+      newErrors.deadline = "Deadline is required";
     } else {
       const deadlineDate = new Date(formData.deadline);
       const now = new Date();
       if (deadlineDate <= now) {
-        newErrors.deadline = "La fecha límite debe ser futura";
+        newErrors.deadline = "Deadline must be in the future";
       }
     }
 
@@ -92,7 +92,7 @@ export function CreateTaskModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Crear Nueva Tarea</DialogTitle>
+          <DialogTitle>Create New Task</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -101,14 +101,14 @@ export function CreateTaskModal({
               htmlFor="title"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Título *
+              Title *
             </label>
             <Input
               id="title"
               type="text"
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
-              placeholder="Título de la tarea"
+              placeholder="Task title"
               className={errors.title ? "border-red-500" : ""}
             />
             {errors.title && (
@@ -121,13 +121,13 @@ export function CreateTaskModal({
               htmlFor="description"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Descripción *
+              Description *
             </label>
             <textarea
               id="description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Descripción detallada de la tarea"
+              placeholder="Detailed task description"
               rows={3}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.description ? "border-red-500" : "border-gray-300"
@@ -143,7 +143,7 @@ export function CreateTaskModal({
               htmlFor="deadline"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Fecha y Hora Límite *
+              Deadline Date and Time *
             </label>
             <Input
               id="deadline"
@@ -160,9 +160,9 @@ export function CreateTaskModal({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>
-              Cancelar
+              Cancel
             </Button>
-            <Button type="submit">Crear Tarea</Button>
+            <Button type="submit">Create Task</Button>
           </DialogFooter>
         </form>
       </DialogContent>
