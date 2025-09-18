@@ -105,38 +105,6 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
                     </div>
                   </div>
                 </div>
-
-                {/* Stats */}
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-blue-900 mb-3">
-                    Estadísticas
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {
-                          JSON.parse(
-                            localStorage.getItem("projectflow-tasks") || "[]",
-                          ).length
-                        }
-                      </div>
-                      <div className="text-blue-800 text-sm">
-                        Tareas Totales
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {
-                          JSON.parse(
-                            localStorage.getItem("projectflow-tasks") || "[]",
-                          ).filter((task: any) => task.status === "completed")
-                            .length
-                        }
-                      </div>
-                      <div className="text-green-800 text-sm">Completadas</div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -158,4 +126,3 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
     </Dialog>
   );
 }
-
