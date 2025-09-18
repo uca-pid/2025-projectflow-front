@@ -55,7 +55,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
               <div className="flex flex-col items-center space-y-4">
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={user?.image} alt={user?.name} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-4xl">
                     {user?.name?.charAt(0)?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

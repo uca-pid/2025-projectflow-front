@@ -3,17 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import WonderlandBackground from "@/components/WonderlandBackground";
-import { LogOut, User, ClipboardList } from "lucide-react";
+import { LogOut, User, ClipboardList, Cog } from "lucide-react";
 
 export default function HomePage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   return (
-    <WonderlandBackground>
+    <WonderlandBackground centered={true}>
       <Card className="w-screen/5 h-screen/2 flex items-center justify-center flex-col">
         <CardTitle>
-          <h1 className="text-4xl font-bold">Control Panel!</h1>
+          <h1 className="text-4xl font-bold">Dashboard</h1>
         </CardTitle>
         <p className="text-gray-600 mb-6 text-center">
           Welcome {user?.name}, access different pages:
@@ -28,6 +28,14 @@ export default function HomePage() {
               <User className="h-4 w-4" />
               User Management
             </Button>
+          )}
+          {user?.role === "ADMIN" && (
+            <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+              <Button className="w-48">
+                <Cog className="h-4 w-4 animate-spin-slow" />
+                Site Management
+              </Button>
+            </a>
           )}
           <Button
             variant="outline"

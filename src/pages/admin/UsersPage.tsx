@@ -131,16 +131,28 @@ export default function AdminUsersPage() {
           </p>
         </div>
 
-        <div className="rounded-md border">
+        <div className="rounded-md border bg-white">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead>Last Active</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  NAME
+                </TableHead>
+                <TableHead className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  EMAIL
+                </TableHead>
+                <TableHead className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ROLE
+                </TableHead>
+                <TableHead className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  JOINED
+                </TableHead>
+                <TableHead className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  LAST ACTIVITY
+                </TableHead>
+                <TableHead className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ACTIONS
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

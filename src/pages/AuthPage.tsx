@@ -186,7 +186,7 @@ export default function AuthPage() {
   };
 
   return (
-    <WonderlandBackground>
+    <WonderlandBackground centered={true}>
       <AuthForm
         onLogin={handleLogin}
         onSocialLogin={handleLoginSocial}
