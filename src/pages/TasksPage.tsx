@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import LoadingPage from "./LoadingPage";
 import { type Task } from "@/types/task";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 
 export default function TasksPage() {
@@ -91,7 +92,7 @@ export default function TasksPage() {
     setShowCreateModal(false);
   };
 
-  const handleUpdateTask = async (taskId: string, taskData: Task) => {
+  const handleUpdateTask = async (taskId: string, taskData: Partial<Task>) => {
     const response = await fetch(
       `${import.meta.env.VITE_API_URL}/task/${taskId}`,
       {
@@ -145,6 +146,22 @@ export default function TasksPage() {
     setSelectedTask(null);
   };
 
+  const handleStartTask = async (taskId: string) => {
+    await handleUpdateTask(taskId, { status: "IN_PROGRESS" });
+  };
+
+  const handlePauseTask = async (taskId: string) => {
+    await handleUpdateTask(taskId, { status: "TODO" });
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    await handleUpdateTask(taskId, { status: "DONE" });
+  };
+
+  const handleCancelTask = async (taskId: string) => {
+    await handleUpdateTask(taskId, { status: "CANCELLED" });
+  };
+
   return (
     <BasicPageLayout>
       {/* Header */}
@@ -191,12 +208,30 @@ export default function TasksPage() {
         </div>
       </div>
 
+      <Tabs defaultValue="my-tasks">
+        <TabsList>
+          <TabsTrigger value="my-tasks">My Tasks</TabsTrigger>
+          <TabsTrigger value="assigned-tasks">Assigned Tasks</TabsTrigger>
+        </TabsList>
+        <TabsContent value="my-tasks">
+          <TasksTable
+            tasks={tasks}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
+            isOwner
+          />
+        </TabsContent>
+        <TabsContent value="assigned-tasks">
+          <TasksTable
+            tasks={tasks}
+            onStartTask={handleStartTask}
+            onPauseTask={handlePauseTask}
+            onCompleteTask={handleCompleteTask}
+            onCancelTask={handleCancelTask}
+          />
+        </TabsContent>
+      </Tabs>
       {/* Tasks Table */}
-      <TasksTable
-        tasks={tasks}
-        onEditTask={handleEditTask}
-        onDeleteTask={handleDeleteTask}
-      />
 
       {/* Modals */}
       <CreateTaskModal

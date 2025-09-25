@@ -23,13 +23,20 @@ import {
   MoreHorizontal,
   Trash2,
   Edit,
+  Flame,
+  Pause,
 } from "lucide-react";
 
-interface TasksTableProps {
+type TasksTableProps = {
   tasks: Task[];
-  onEditTask: (task: Task) => void;
-  onDeleteTask: (taskId: string) => void;
-}
+  isOwner?: boolean;
+  onEditTask?: (task: Task) => void;
+  onDeleteTask?: (taskId: string) => void;
+  onCancelTask?: (taskId: string) => void;
+  onStartTask?: (taskId: string) => void;
+  onPauseTask?: (taskId: string) => void;
+  onCompleteTask?: (taskId: string) => void;
+};
 
 function getStatusVariant(
   status: string,
@@ -92,6 +99,11 @@ export function TasksTable({
   tasks,
   onEditTask,
   onDeleteTask,
+  isOwner = false,
+  onCancelTask,
+  onStartTask,
+  onPauseTask,
+  onCompleteTask,
 }: TasksTableProps) {
   if (tasks.length === 0) {
     return (
@@ -178,22 +190,71 @@ export function TasksTable({
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button
+                      disabled={
+                        (task.status === "DONE" ||
+                          task.status === "CANCELLED") &&
+                        !isOwner
+                      }
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => onEditTask(task)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onDeleteTask(task.id)}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-                      Delete
-                    </DropdownMenuItem>
+                    {isOwner && onEditTask && onDeleteTask && (
+                      <>
+                        <DropdownMenuItem onClick={() => onEditTask(task)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onDeleteTask(task.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                          Delete
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {!isOwner &&
+                      onCancelTask &&
+                      onStartTask &&
+                      onPauseTask &&
+                      onCompleteTask && (
+                        <>
+                          {task.status === "TODO" && (
+                            <DropdownMenuItem
+                              onClick={() => onStartTask(task.id)}
+                            >
+                              <Flame className="mr-2 h-4 w-4" />
+                              Start Working
+                            </DropdownMenuItem>
+                          )}
+                          {task.status === "IN_PROGRESS" && (
+                            <DropdownMenuItem
+                              onClick={() => onPauseTask(task.id)}
+                            >
+                              <Pause className="mr-2 h-4 w-4" />
+                              Halt
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => onCompleteTask(task.id)}
+                          >
+                            <Check className="mr-2 h-4 w-4" />
+                            Complete
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onCancelTask(task.id)}
+                            className="text-red-600"
+                          >
+                            <Ban className="mr-2 h-4 w-4 text-red-600" />
+                            Cancel
+                          </DropdownMenuItem>
+                        </>
+                      )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
