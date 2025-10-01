@@ -1,3 +1,5 @@
+import type { User } from "./user";
+
 export interface Task {
   id: string;
   title: string;
@@ -7,6 +9,7 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   creatorId: string;
+  assignedUsers: Partial<User>[];
+  appliedUsers: Partial<User>[];
 }
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";
-

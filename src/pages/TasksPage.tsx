@@ -6,22 +6,32 @@ import { DeleteTaskModal } from "@/components/DeleteTaskModal";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
+import { AssignTaskModal } from "@/components/AssignTaskModal";
 import LoadingPage from "./LoadingPage";
 import { type Task } from "@/types/task";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
 import { Plus } from "lucide-react";
 
 export default function TasksPage() {
+  const { user } = useAuth();
+
   const [tasks, setTasks] = useState<Task[]>([]);
+
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
+  const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
+  // Fetch and load tasks
   useEffect(() => {
     try {
       fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
@@ -39,6 +49,18 @@ export default function TasksPage() {
       setLoading(false);
     }
   }, []);
+
+  // Filter tasks
+  useEffect(() => {
+    const myTasks = tasks.filter((task) => task.creatorId === user?.id);
+    const assignedTasks = tasks.filter(
+      (task) =>
+        task.assignedUsers.some((user) => user.id === user?.id) &&
+        task.creatorId !== user?.id,
+    );
+    setMyTasks(myTasks);
+    setAssignedTasks(assignedTasks);
+  }, [tasks, user]);
 
   if (loading) {
     return <LoadingPage />;
@@ -162,6 +184,11 @@ export default function TasksPage() {
     await handleUpdateTask(taskId, { status: "CANCELLED" });
   };
 
+  const handleAssignTask = (taskId: string) => {
+    setShowAssignModal(true);
+    setSelectedTask(tasks.find((task) => task.id === taskId) || null);
+  };
+
   return (
     <BasicPageLayout>
       {/* Header */}
@@ -215,15 +242,16 @@ export default function TasksPage() {
         </TabsList>
         <TabsContent value="my-tasks">
           <TasksTable
-            tasks={tasks}
+            tasks={myTasks}
             onEditTask={handleEditTask}
             onDeleteTask={handleDeleteTask}
+            onAssignTask={handleAssignTask}
             isOwner
           />
         </TabsContent>
         <TabsContent value="assigned-tasks">
           <TasksTable
-            tasks={tasks}
+            tasks={assignedTasks}
             onStartTask={handleStartTask}
             onPauseTask={handlePauseTask}
             onCompleteTask={handleCompleteTask}
@@ -258,6 +286,11 @@ export default function TasksPage() {
         }}
         onConfirmDelete={handleConfirmDelete}
         task={selectedTask}
+      />
+      <AssignTaskModal
+        open={showAssignModal}
+        onClose={() => setShowAssignModal(false)}
+        task={selectedTask!}
       />
     </BasicPageLayout>
   );

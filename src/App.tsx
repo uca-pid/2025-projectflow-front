@@ -12,6 +12,8 @@ import PasswordReset from "@/pages/PasswordReset";
 import UsersPage from "@/pages/admin/UsersPage";
 import TasksPage from "@/pages/TasksPage";
 
+import ApplyPage from "@/pages/ApplyPage";
+
 function App() {
   return (
     <BrowserRouter>
@@ -48,6 +50,16 @@ function App() {
           element={
             <ProtectedRoute>
               <TasksPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Dynamic routes */}
+        <Route
+          path="/apply/:taskId"
+          element={
+            <ProtectedRoute>
+              <ApplyPage />
             </ProtectedRoute>
           }
         />

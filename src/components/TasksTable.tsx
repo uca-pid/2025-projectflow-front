@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Clock,
+  UserPlus,
   Check,
   LoaderCircle,
   Ban,
@@ -36,6 +37,7 @@ type TasksTableProps = {
   onStartTask?: (taskId: string) => void;
   onPauseTask?: (taskId: string) => void;
   onCompleteTask?: (taskId: string) => void;
+  onAssignTask?: (taskId: string) => void;
 };
 
 function getStatusVariant(
@@ -104,6 +106,7 @@ export function TasksTable({
   onStartTask,
   onPauseTask,
   onCompleteTask,
+  onAssignTask,
 }: TasksTableProps) {
   if (tasks.length === 0) {
     return (
@@ -208,6 +211,12 @@ export function TasksTable({
                         <DropdownMenuItem onClick={() => onEditTask(task)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onAssignTask!(task.id)}
+                        >
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Assign Task
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => onDeleteTask(task.id)}
