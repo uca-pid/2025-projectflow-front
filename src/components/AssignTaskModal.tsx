@@ -138,7 +138,7 @@ export const AssignTaskModal = ({
 
   const handleDecline = async (userId: string) => {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/task/${task?.id}/decline/${userId}`,
+      `${import.meta.env.VITE_API_URL}/task/${task?.id}/reject/${userId}`,
       {
         method: "POST",
         credentials: "include",

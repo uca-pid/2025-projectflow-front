@@ -11,5 +11,8 @@ export interface Task {
   creatorId: string;
   assignedUsers: Partial<User>[];
   appliedUsers: Partial<User>[];
+  parentTaskId: string | null;
+  parentTask: Partial<Task> | null;
+  subTasks: Partial<Task>[];
 }
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";

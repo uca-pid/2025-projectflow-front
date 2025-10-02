@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { TasksTable } from "@/components/TasksTable";
+import { MyTasksTable } from "@/components/MyTasksTable";
+import { AssignedTasksTable } from "@/components/AssignedTasksTable";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
+import { CreateSubTaskModal } from "@/components/CreateSubTaskModal";
 import { EditTaskModal } from "@/components/EditTaskModal";
 import { DeleteTaskModal } from "@/components/DeleteTaskModal";
 import { Button } from "@/components/ui/button";
@@ -12,6 +14,28 @@ import { type Task } from "@/types/task";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Plus } from "lucide-react";
+
+function flattenTasks(tasks: Partial<Task>[]): Task[] {
+  const map = new Map<string, Task>();
+
+  function traverse(list: Partial<Task>[]) {
+    for (const task of list) {
+      if (task.id) {
+        // if not already stored, add it
+        if (!map.has(task.id)) {
+          map.set(task.id, task as Task);
+        }
+      }
+
+      if (task.subTasks && task.subTasks.length > 0) {
+        traverse(task.subTasks);
+      }
+    }
+  }
+
+  traverse(tasks);
+  return Array.from(map.values());
+}
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -25,6 +49,7 @@ export default function TasksPage() {
   const [error, setError] = useState<boolean>(false);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateSubModal, setShowCreateSubModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -55,7 +80,7 @@ export default function TasksPage() {
     const myTasks = tasks.filter((task) => task.creatorId === user?.id);
     const assignedTasks = tasks.filter(
       (task) =>
-        task.assignedUsers.some((user) => user.id === user?.id) &&
+        task.assignedUsers?.some((user) => user.id === user?.id) &&
         task.creatorId !== user?.id,
     );
     setMyTasks(myTasks);
@@ -114,6 +139,59 @@ export default function TasksPage() {
     setShowCreateModal(false);
   };
 
+  const handleCreateSubTask = async (taskData: Task) => {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/task/${taskData?.parentTaskId}/create`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(taskData),
+      },
+    );
+
+    if (!response.ok) {
+      toast.error("Failed to create task");
+      throw new Error("Failed to create task");
+    }
+
+    toast.success("Task created successfully");
+
+    const serverTask = await response.json();
+
+    function addSubTask(
+      tasks: Partial<Task>[],
+      parentId: string,
+      newTask: Task,
+    ): Task[] {
+      return tasks.map((task) => {
+        if (task.id === parentId) {
+          return {
+            ...task,
+            subTasks: [...(task.subTasks || []), newTask],
+          };
+        }
+
+        if (task.subTasks && task.subTasks.length > 0) {
+          return {
+            ...task,
+            subTasks: addSubTask(task.subTasks, parentId, newTask),
+          };
+        }
+
+        return task;
+      }) as Task[];
+    }
+
+    setTasks((prevTasks) =>
+      addSubTask(prevTasks, serverTask.data.parentTaskId, serverTask.data),
+    );
+
+    setShowCreateModal(false);
+  };
+
   const handleUpdateTask = async (taskId: string, taskData: Partial<Task>) => {
     const response = await fetch(
       `${import.meta.env.VITE_API_URL}/task/${taskId}`,
@@ -136,11 +214,33 @@ export default function TasksPage() {
     const data = await response.json();
     taskData = data.data;
 
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, ...taskData } : task,
-      ),
-    );
+    function patchSubTask(
+      tasks: Partial<Task>[],
+      taskId: string,
+      updatedFields: Partial<Task>,
+    ): Task[] {
+      return tasks.map((task) => {
+        if (task.id === taskId) {
+          // Patch the task
+          return {
+            ...task,
+            ...updatedFields,
+          };
+        }
+
+        if (task.subTasks && task.subTasks.length > 0) {
+          return {
+            ...task,
+            subTasks: patchSubTask(task.subTasks, taskId, updatedFields),
+          };
+        }
+
+        return task;
+      }) as Task[];
+    }
+
+    setTasks((prevTasks) => patchSubTask(prevTasks, taskData.id!, taskData));
+
     setShowEditModal(false);
     setSelectedTask(null);
   };
@@ -186,7 +286,26 @@ export default function TasksPage() {
 
   const handleAssignTask = (taskId: string) => {
     setShowAssignModal(true);
-    setSelectedTask(tasks.find((task) => task.id === taskId) || null);
+    function findTask(tasks: Partial<Task>[], taskId: string): Task | null {
+      for (const task of tasks) {
+        if (task.id === taskId) {
+          return task as Task;
+        }
+
+        if (task.subTasks && task.subTasks.length > 0) {
+          const found = findTask(task.subTasks, taskId);
+          if (found) return found;
+        }
+      }
+
+      return null;
+    }
+    setSelectedTask(findTask(tasks, taskId)!);
+  };
+
+  const handleOpenSubTask = (task: Task) => {
+    setShowCreateSubModal(true);
+    setSelectedTask(task);
   };
 
   return (
@@ -212,24 +331,36 @@ export default function TasksPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="text-2xl font-bold text-gray-900">{tasks.length}</div>
+          <div className="text-2xl font-bold text-gray-900">
+            {flattenTasks(tasks).length}
+          </div>
           <div className="text-gray-600">Total Tasks</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-blue-600">
-            {tasks.filter((task) => task.status === "IN_PROGRESS").length}
+            {
+              flattenTasks(tasks).filter(
+                (task) => task.status === "IN_PROGRESS",
+              ).length
+            }
           </div>
           <div className="text-gray-600">In Progress</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-green-600">
-            {tasks.filter((task) => task.status === "DONE").length}
+            {
+              flattenTasks(tasks).filter((task) => task.status === "DONE")
+                .length
+            }
           </div>
           <div className="text-gray-600">Completed</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-red-600">
-            {tasks.filter((task) => task.status === "CANCELLED").length}
+            {
+              flattenTasks(tasks).filter((task) => task.status === "CANCELLED")
+                .length
+            }
           </div>
           <div className="text-gray-600">Cancelled</div>
         </div>
@@ -240,26 +371,28 @@ export default function TasksPage() {
           <TabsTrigger value="my-tasks">My Tasks</TabsTrigger>
           <TabsTrigger value="assigned-tasks">Assigned Tasks</TabsTrigger>
         </TabsList>
+        {/* Tasks Table */}
         <TabsContent value="my-tasks">
-          <TasksTable
+          <MyTasksTable
             tasks={myTasks}
             onEditTask={handleEditTask}
             onDeleteTask={handleDeleteTask}
             onAssignTask={handleAssignTask}
-            isOwner
+            onCreateSubTask={handleOpenSubTask}
           />
         </TabsContent>
         <TabsContent value="assigned-tasks">
-          <TasksTable
+          <AssignedTasksTable
             tasks={assignedTasks}
             onStartTask={handleStartTask}
             onPauseTask={handlePauseTask}
             onCompleteTask={handleCompleteTask}
             onCancelTask={handleCancelTask}
+            onCreateSubTask={handleOpenSubTask}
           />
         </TabsContent>
       </Tabs>
-      {/* Tasks Table */}
+      <pre>{JSON.stringify(tasks, null, 2)}</pre>
 
       {/* Modals */}
       <CreateTaskModal
@@ -267,7 +400,16 @@ export default function TasksPage() {
         onClose={() => setShowCreateModal(false)}
         onCreateTask={handleCreateTask}
       />
-
+      <CreateSubTaskModal
+        open={showCreateSubModal}
+        onClose={() => {
+          setShowCreateSubModal(false);
+          setSelectedTask(null);
+        }}
+        onCreateTask={handleCreateSubTask}
+        creator={user || null}
+        parentTask={selectedTask}
+      />
       <EditTaskModal
         open={showEditModal}
         onClose={() => {
@@ -277,7 +419,6 @@ export default function TasksPage() {
         onUpdateTask={handleUpdateTask}
         task={selectedTask}
       />
-
       <DeleteTaskModal
         open={showDeleteModal}
         onClose={() => {
@@ -289,7 +430,10 @@ export default function TasksPage() {
       />
       <AssignTaskModal
         open={showAssignModal}
-        onClose={() => setShowAssignModal(false)}
+        onClose={() => {
+          setShowAssignModal(false);
+          setSelectedTask(null);
+        }}
         task={selectedTask!}
       />
     </BasicPageLayout>
