@@ -25,6 +25,7 @@ export default function AuthForm({
 }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [isRequesting, setIsRequesting] = useState(false);
 
   // For login mode, use simple state
   const [loginPassword, setLoginPassword] = useState("");
@@ -55,30 +56,35 @@ export default function AuthForm({
     ? setShowLoginPassword
     : setShowSignupPassword;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsRequesting(true);
 
     if (mode === "login") {
-      onLogin?.(email, password);
+      await onLogin?.(email, password);
     }
 
     if (mode === "signup") {
       // Validate signup requirements
       if (!isPasswordValid) {
         toast.error("Password does not meet requirements");
+        setIsRequesting(false);
         return;
       }
 
       if (!doPasswordsMatch) {
         toast.error("Passwords do not match");
+        setIsRequesting(false);
         return;
       }
 
-      onSignup?.(email, name, password);
+      await onSignup?.(email, name, password);
     }
+    
+    setIsRequesting(false);
   };
 
-  const handleSocial = (provider: "github" | "google") => {
+  const handleSocial = async (provider: "github" | "google") => {
     if (provider !== "github" && provider !== "google") {
       toast.error("Access Denied - Social Provider Error", {
         description:
@@ -93,7 +99,9 @@ export default function AuthForm({
       });
       return;
     }
-    onSocialLogin?.(provider);
+    setIsRequesting(true);
+    await onSocialLogin?.(provider);
+    setIsRequesting(false);
   };
 
   return (
@@ -263,7 +271,7 @@ export default function AuthForm({
         <Button
           type="submit"
           className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-          disabled={!isLogin && (!isPasswordValid || !doPasswordsMatch)}
+          disabled={isRequesting || (!isLogin && (!isPasswordValid || !doPasswordsMatch))}
         >
           {isLogin ? "Sign In" : "Create Account"}
         </Button>
@@ -286,6 +294,7 @@ export default function AuthForm({
           className="h-12 border-border hover:bg-accent transition-all duration-200"
           type="button"
           onClick={() => handleSocial("google")}
+          disabled={isRequesting}
         >
           <Google className="h-4 w-4" />
           <span className="ml-2">Google</span>
