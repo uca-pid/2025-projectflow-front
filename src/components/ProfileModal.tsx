@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
 import {
   Dialog,
   DialogHeader,
@@ -21,9 +22,12 @@ interface ProfileModalProps {
 
 export function ProfileModal({ open, onClose }: ProfileModalProps) {
   const { user, signOut } = useAuth();
+  const [isRequesting, setIsRequesting] = useState(false);
 
-  const handleLogout = () => {
-    signOut();
+  const handleLogout = async () => {
+    setIsRequesting(true);
+    await signOut();
+    setIsRequesting(false);
     onClose();
   };
 
@@ -159,6 +163,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
             type="button"
             variant="destructive"
             className="hover:cursor-pointer"
+	    disabled={isRequesting}
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4" />

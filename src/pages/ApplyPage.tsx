@@ -1,15 +1,17 @@
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Home } from "lucide-react";
+import { ClipboardList, CircleAlert, Home } from "lucide-react";
 import LoadingPage from "@/pages/LoadingPage";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { Task } from "@/types/task";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export default function ApplyPage() {
   const { taskId } = useParams<{ taskId: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -17,6 +19,9 @@ export default function ApplyPage() {
   const [success, setSuccess] = useState<boolean>(false);
   const [error, setError] = useState<boolean>(false);
   const [task, setTask] = useState<Task>();
+
+  const isOwner = task?.creator?.id === user?.id;
+  const isAssigned = task?.assignedUsers?.some((u)=>u.id==user.id)
 
   useEffect(() => {
     try {
@@ -87,11 +92,25 @@ export default function ApplyPage() {
           <div className="flex flex-row gap-4">
             <Button
               className="w-48"
-              disabled={applying || success}
+              disabled={applying || success || isOwner || isAssigned}
               onClick={handleApply}
             >
-              <ClipboardList className="h-4 w-4" />
-              Apply
+	    { isOwner ?
+		(<>
+	        <CircleAlert className="h-4 w-4" />
+		You own this task!
+	      </>)   
+	      :
+		isAssigned ? ( <>
+	        <CircleAlert className="h-4 w-4" />
+		You are already assigned!
+	      </> ) :
+		      (
+              <>
+	        <ClipboardList className="h-4 w-4" />
+                Apply
+	      </>)}
+
             </Button>
             {success && (
               <Button

@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import WonderlandBackground from "@/components/WonderlandBackground";
@@ -8,6 +9,14 @@ import { LogOut, User, ClipboardList, Cog } from "lucide-react";
 export default function HomePage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const [isRequesting, setIsRequesting] = useState(false);
+
+  const handleSignOut = async () => {
+    setIsRequesting(true);
+    await signOut();
+    setIsRequesting(false);
+  };
 
   return (
     <WonderlandBackground centered={true}>
@@ -40,7 +49,8 @@ export default function HomePage() {
           <Button
             variant="outline"
             className="text-red-600 w-48"
-            onClick={signOut}
+            onClick={handleSignOut}
+	    disables={isRequesting}
           >
             <LogOut className="h-4 w-4" />
             Sign Out

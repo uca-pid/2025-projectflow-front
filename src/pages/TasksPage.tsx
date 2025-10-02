@@ -392,8 +392,7 @@ export default function TasksPage() {
           />
         </TabsContent>
       </Tabs>
-      <pre>{JSON.stringify(tasks, null, 2)}</pre>
-
+      
       {/* Modals */}
       <CreateTaskModal
         open={showCreateModal}
