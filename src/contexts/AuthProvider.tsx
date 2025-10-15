@@ -84,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signInSocial = async (provider: string) => {
     const response = await authClient.signIn.social({
       provider,
-      callbackURL: "http://localhost:5173/dashboard",
+      callbackURL: `${import.meta.env.VITE_FRONT_URL}/dashboard`,
     });
     const session = await authClient.getSession();
     const found_user = session?.data?.user;
@@ -121,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const requestPasswordReset = async (email: string) => {
     const response = await authClient.requestPasswordReset({
       email,
-      redirectTo: "http://localhost:5173/reset-password",
+      redirectTo: `${import.meta.env.VITE_FRONT_URL}/reset-password`,
     });
     return response;
   };
