@@ -12,6 +12,16 @@ import { AssignTaskModal } from "@/components/AssignTaskModal";
 import LoadingPage from "./LoadingPage";
 import { type Task } from "@/types/task";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TreeGraph from "@/components/TreeGraph";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { Plus } from "lucide-react";
 
@@ -47,6 +57,10 @@ export default function TasksPage() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
+
+  const [selectedView, setSelectedView] = useState<"tree" | "kanban" | "table">(
+    "table",
+  );
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCreateSubModal, setShowCreateSubModal] = useState(false);
@@ -189,6 +203,8 @@ export default function TasksPage() {
       addSubTask(prevTasks, serverTask.data.parentTaskId, serverTask.data),
     );
 
+    setTasks((prevTasks) => [...prevTasks, serverTask.data]);
+
     setShowCreateModal(false);
   };
 
@@ -256,14 +272,31 @@ export default function TasksPage() {
         },
       },
     );
-
     if (!response.ok) {
       toast.error("Failed to delete task");
       throw new Error("Failed to delete task");
     }
-
     toast.success("Deleted task successfully");
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+
+    function deleteTaskRecursively(
+      tasks: Partial<Task>[],
+      taskIdToDelete: string,
+    ): Task[] {
+      return tasks
+        .filter((task) => task.id !== taskIdToDelete)
+        .map((task) => {
+          if (task.subTasks && task.subTasks.length > 0) {
+            return {
+              ...task,
+              subTasks: deleteTaskRecursively(task.subTasks, taskIdToDelete),
+            };
+          }
+          return task;
+        }) as Task[];
+    }
+
+    setTasks((prevTasks) => deleteTaskRecursively(prevTasks, taskId));
+    setMyTasks((prevTasks) => deleteTaskRecursively(prevTasks, taskId));
     setShowDeleteModal(false);
     setSelectedTask(null);
   };
@@ -308,6 +341,10 @@ export default function TasksPage() {
     setSelectedTask(task);
   };
 
+  const handleViewChange = (value: string) => {
+    setSelectedView(value as "tree" | "kanban" | "table");
+  };
+
   return (
     <BasicPageLayout>
       {/* Header */}
@@ -321,10 +358,25 @@ export default function TasksPage() {
               Organize and manage your tasks with specific deadlines
             </p>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4" />
-            Task
-          </Button>
+          <div className="flex gap-2">
+            <Select defaultValue="table" onValueChange={handleViewChange}>
+              <SelectTrigger className="w-[140px] bg-white shadow">
+                <SelectValue placeholder="Select a view" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectGroup>
+                  <SelectLabel>Views</SelectLabel>
+                  <SelectItem value="table">Table View</SelectItem>
+                  <SelectItem value="kanban">Kanban View</SelectItem>
+                  <SelectItem value="tree">Tree View</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4" />
+              Task
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -373,13 +425,27 @@ export default function TasksPage() {
         </TabsList>
         {/* Tasks Table */}
         <TabsContent value="my-tasks">
-          <MyTasksTable
-            tasks={myTasks}
-            onEditTask={handleEditTask}
-            onDeleteTask={handleDeleteTask}
-            onAssignTask={handleAssignTask}
-            onCreateSubTask={handleOpenSubTask}
-          />
+          {selectedView === "tree" && (
+            <TreeGraph
+              tasks={myTasks}
+              selectedTask={selectedTask}
+              setSelectedTask={setSelectedTask}
+              openEditModal={handleEditTask}
+              openAddSubtask={handleOpenSubTask}
+              openDeleteTask={handleDeleteTask}
+              openAssignTask={handleAssignTask}
+            />
+          )}
+          {selectedView === "kanban" && <></>}
+          {selectedView === "table" && (
+            <MyTasksTable
+              tasks={myTasks}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTask}
+              onAssignTask={handleAssignTask}
+              onCreateSubTask={handleOpenSubTask}
+            />
+          )}
         </TabsContent>
         <TabsContent value="assigned-tasks">
           <AssignedTasksTable
@@ -392,7 +458,7 @@ export default function TasksPage() {
           />
         </TabsContent>
       </Tabs>
-      
+
       {/* Modals */}
       <CreateTaskModal
         open={showCreateModal}

@@ -13,6 +13,7 @@ import UsersPage from "@/pages/admin/UsersPage";
 import TasksPage from "@/pages/TasksPage";
 
 import ApplyPage from "@/pages/ApplyPage";
+import ViewTaskPage from "@/pages/ViewTaskPage";
 
 function App() {
   return (
@@ -60,6 +61,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ApplyPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/task/:taskId"
+          element={
+            <ProtectedRoute>
+              <ViewTaskPage />
             </ProtectedRoute>
           }
         />

@@ -5,6 +5,7 @@ export interface Task {
   title: string;
   description: string;
   status: string;
+  isPublic: boolean;
   deadline: string;
   createdAt: string;
   updatedAt: string;
@@ -15,4 +16,5 @@ export interface Task {
   parentTask: Partial<Task> | null;
   subTasks: Partial<Task>[];
 }
+
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";

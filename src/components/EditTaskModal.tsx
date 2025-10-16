@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface EditTaskModalProps {
   open: boolean;
@@ -28,6 +29,7 @@ export function EditTaskModal({
     description: "",
     deadline: "",
     status: "TODO" as TaskStatus,
+    isPublic: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -39,6 +41,7 @@ export function EditTaskModal({
         description: task.description,
         deadline: deadlineString,
         status: task.status as TaskStatus,
+        isPublic: task.isPublic,
       });
     }
   }, [task]);
@@ -78,6 +81,7 @@ export function EditTaskModal({
         description: formData.description.trim(),
         deadline: formData.deadline,
         status: formData.status,
+        isPublic: formData.isPublic,
       };
 
       onUpdateTask(task.id, taskData as Task);
@@ -91,6 +95,7 @@ export function EditTaskModal({
       description: "",
       deadline: "",
       status: "TODO",
+      isPublic: false,
     });
     setErrors({});
     onClose();
@@ -197,6 +202,27 @@ export function EditTaskModal({
               min={getMinDateTime()}
               className={errors.deadline ? "border-red-500" : ""}
             />
+            {errors.deadline && (
+              <p className="text-red-500 text-xs mt-1">{errors.deadline}</p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="edit-deadline"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Visibility
+            </label>
+            <div className="flex flex-row items-center gap-1">
+              <Checkbox
+                id="edit-public"
+                onCheckedChange={(checked) =>
+                  handleInputChange("isPublic", checked.toString())
+                }
+              />
+              <p className="text-sm">Make this task public</p>
+            </div>
             {errors.deadline && (
               <p className="text-red-500 text-xs mt-1">{errors.deadline}</p>
             )}
