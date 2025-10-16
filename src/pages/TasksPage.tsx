@@ -422,6 +422,7 @@ export default function TasksPage() {
         <TabsList>
           <TabsTrigger value="my-tasks">My Tasks</TabsTrigger>
           <TabsTrigger value="assigned-tasks">Assigned Tasks</TabsTrigger>
+          <TabsTrigger value="tracked-tasks">Tracked Tasks</TabsTrigger>
         </TabsList>
         {/* Tasks Table */}
         <TabsContent value="my-tasks">
@@ -457,6 +458,7 @@ export default function TasksPage() {
             onCreateSubTask={handleOpenSubTask}
           />
         </TabsContent>
+        <TabsContent value="tracked-tasks">Hi!</TabsContent>
       </Tabs>
 
       {/* Modals */}

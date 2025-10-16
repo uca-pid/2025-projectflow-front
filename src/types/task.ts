@@ -12,6 +12,7 @@ export interface Task {
   creatorId: string;
   assignedUsers: Partial<User>[];
   appliedUsers: Partial<User>[];
+  trackedUsers: Partial<User>[];
   parentTaskId: string | null;
   parentTask: Partial<Task> | null;
   subTasks: Partial<Task>[];
