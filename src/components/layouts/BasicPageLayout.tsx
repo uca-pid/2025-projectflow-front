@@ -41,34 +41,20 @@ export default function BasicPageLayout({ children }: LayoutProps) {
 
               <div className="flex items-center space-x-4">
                 <span className="text-gray-600 text-sm hidden sm:block">
-                  Hello, {user?.name}!
+                  Shalom, {user?.name}!
                 </span>
-                
-                <NotificationBell />
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowProfileModal(true)}
-                  className="flex items-center space-x-2"
-                >
-                  <Avatar className="h-6 w-6 rounded-full">
-                    <AvatarImage src={user?.image} />
-                    <AvatarFallback className="bg-black text-white">
-                      {user?.name?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden sm:block">Profile</span>
-                </Button>
 
-                <Button
-                  variant="outline"
-                  className="text-red-600"
-                  onClick={signOut}
+                <NotificationBell />
+
+                <Avatar
+                  className="h-8 w-8 rounded-full hover:cursor-pointer hover:opacity-80 shadow-lg"
+                  onClick={() => setShowProfileModal(true)}
                 >
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
-                </Button>
+                  <AvatarImage src={user?.image} />
+                  <AvatarFallback className="bg-black text-white">
+                    {user?.name?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
               </div>
             </div>
           </div>

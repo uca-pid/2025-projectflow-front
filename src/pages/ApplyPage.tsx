@@ -20,8 +20,8 @@ export default function ApplyPage() {
   const [error, setError] = useState<boolean>(false);
   const [task, setTask] = useState<Task>();
 
-  const isOwner = task?.creator?.id === user?.id;
-  const isAssigned = task?.assignedUsers?.some((u)=>u.id==user.id)
+  const isOwner = task?.creatorId === user?.id;
+  const isAssigned = task?.assignedUsers?.some((u) => u.id == user?.id);
 
   useEffect(() => {
     try {
@@ -71,7 +71,7 @@ export default function ApplyPage() {
       <div className="mx-auto py-8 w-full flex items-center justify-center">
         <Card className="w-1/2 h-screen/2 flex items-center justify-center flex-col">
           <CardTitle>
-            <h1 className="text-4xl font-bold">Apply to participate</h1>
+            <h1 className="text-4xl font-bold">Apply As Viewer</h1>
           </CardTitle>
           <p className="text-gray-600 mb-2">You are applying for this task:</p>
           <div className="flex flex-col items-center border border-gray-300 p-4 rounded-lg">
@@ -95,22 +95,22 @@ export default function ApplyPage() {
               disabled={applying || success || isOwner || isAssigned}
               onClick={handleApply}
             >
-	    { isOwner ?
-		(<>
-	        <CircleAlert className="h-4 w-4" />
-		You own this task!
-	      </>)   
-	      :
-		isAssigned ? ( <>
-	        <CircleAlert className="h-4 w-4" />
-		You are already assigned!
-	      </> ) :
-		      (
-              <>
-	        <ClipboardList className="h-4 w-4" />
-                Apply
-	      </>)}
-
+              {isOwner ? (
+                <>
+                  <CircleAlert className="h-4 w-4" />
+                  You own this task!
+                </>
+              ) : isAssigned ? (
+                <>
+                  <CircleAlert className="h-4 w-4" />
+                  You are already assigned!
+                </>
+              ) : (
+                <>
+                  <ClipboardList className="h-4 w-4" />
+                  Apply
+                </>
+              )}
             </Button>
             {success && (
               <Button
