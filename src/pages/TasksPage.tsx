@@ -17,6 +17,8 @@ import { type Task } from "@/types/task";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PublicTasksTable } from "@/components/PublicTasksTable";
 import TreeGraph from "@/components/TreeGraph";
+import AssignedTreeGraph from "@/components/AssignedTreeGraph";
+import TrackedTreeGraph from "@/components/TrackedTreeGraph";
 import {
   Select,
   SelectContent,
@@ -151,14 +153,6 @@ export default function TasksPage() {
     );
     fetchTasks();
   }, []);
-
-  const findTaskAcross = (taskId: string) => {
-    return (
-      tasks.my.find((task) => task.id === taskId) ||
-      tasks.assigned.find((task) => task.id === taskId) ||
-      tasks.tracked.find((task) => task.id === taskId)
-    );
-  };
 
   const handleTabChange = (tab: string) => {
     setSelectedType(tab as TaskType);
@@ -576,6 +570,18 @@ export default function TasksPage() {
               onCancel={handleCancelTask}
             />
           )}
+          {selectedView === "tree" && (
+            <AssignedTreeGraph
+              tasks={tasks.assigned}
+              selectedTask={selectedTask}
+              setSelectedTask={setSelectedTask}
+              openAddSubtask={handleOpenSubTask}
+              onCompleteTask={handleCompleteTask}
+              onCancelTask={handleCancelTask}
+              onStartTask={handleStartTask}
+              onPauseTask={handlePauseTask}
+            />
+          )}
           {selectedView === "table" && (
             <AssignedTasksTable
               tasks={tasks.assigned}
@@ -590,6 +596,8 @@ export default function TasksPage() {
         <TabsContent value="tracked">
           {selectedView === "kanban" && (
             <PublicTasksKanban tasks={flattenTasks(tasks.tracked)} />
+          {selectedView === "tree" && (
+            <TrackedTreeGraph tasks={tasks.tracked} />
           )}
           {selectedView === "table" && (
             <PublicTasksTable tasks={tasks.tracked} />
