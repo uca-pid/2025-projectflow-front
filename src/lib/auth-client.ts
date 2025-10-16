@@ -1,8 +1,8 @@
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
-  baseURL: "https://apiprojectflow.semantic.com.ar",
-    fetchOptions: {
+  baseURL: import.meta.env.VITE_API_URL,
+  fetchOptions: {
     credentials: "include",
   },
 });

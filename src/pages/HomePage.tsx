@@ -9,7 +9,6 @@ import { LogOut, User, ClipboardList, Cog } from "lucide-react";
 export default function HomePage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-
   const [isRequesting, setIsRequesting] = useState(false);
 
   const handleSignOut = async () => {
@@ -50,7 +49,7 @@ export default function HomePage() {
             variant="outline"
             className="text-red-600 w-48"
             onClick={handleSignOut}
-	    disables={isRequesting}
+            disabled={isRequesting}
           >
             <LogOut className="h-4 w-4" />
             Sign Out

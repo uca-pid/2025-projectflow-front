@@ -92,7 +92,17 @@ export function CreateSubTaskModal({
   // Format date for datetime-local input
   const getMinDateTime = () => {
     const now = new Date();
-    now.setMinutes(now.getMinutes() + 1); // Minimum 1 minute from now
+    now.setMinutes(now.getMinutes() + 1);
+    return now.toISOString().slice(0, 16);
+  };
+
+  if (!creator || !parentTask) {
+    return null;
+  }
+
+  const getMaxDateTime = () => {
+    const now = new Date(parentTask!.deadline!);
+    now.setMinutes(now.getMinutes() + 1);
     return now.toISOString().slice(0, 16);
   };
 
@@ -181,6 +191,7 @@ export function CreateSubTaskModal({
               value={formData.deadline}
               onChange={(e) => handleInputChange("deadline", e.target.value)}
               min={getMinDateTime()}
+              max={getMaxDateTime()}
               className={errors.deadline ? "border-red-500" : ""}
             />
             {errors.deadline && (

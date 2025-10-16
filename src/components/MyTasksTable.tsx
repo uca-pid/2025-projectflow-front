@@ -33,8 +33,8 @@ import { useState } from "react";
 type MyTasksTableProps = {
   tasks: Task[];
   onEditTask?: (task: Task) => void;
-  onDeleteTask?: (taskId: string) => void;
-  onAssignTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
+  onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
 };
 
@@ -110,8 +110,8 @@ function TaskRow({
   expandedTasks: Set<string>;
   toggleTask: (taskId: string) => void;
   onEditTask?: (task: Task) => void;
-  onDeleteTask?: (taskId: string) => void;
-  onAssignTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
+  onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
 }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
@@ -205,12 +205,12 @@ function TaskRow({
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAssignTask!(task.id)}>
+              <DropdownMenuItem onClick={() => onAssignTask!(task)}>
                 <UserPlus className="mr-2 h-4 w-4" />
                 Assign Task
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onDeleteTask!(task.id)}
+                onClick={() => onDeleteTask!(task)}
                 className="text-red-600"
               >
                 <Trash2 className="mr-2 h-4 w-4 text-red-600" />

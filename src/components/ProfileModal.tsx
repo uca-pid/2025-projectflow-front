@@ -163,7 +163,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
             type="button"
             variant="destructive"
             className="hover:cursor-pointer"
-	    disabled={isRequesting}
+            disabled={isRequesting}
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4" />
