@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { MyTasksTable } from "@/components/MyTasksTable";
 import { AssignedTasksTable } from "@/components/AssignedTasksTable";
+import { MyTasksKanban } from "@/components/MyTasksKanban";
+import { AssignedTasksKanban } from "@/components/AssignedTasksKanban";
+import { PublicTasksKanban } from "@/components/PublicTasksKanban";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { CreateSubTaskModal } from "@/components/CreateSubTaskModal";
 import { EditTaskModal } from "@/components/EditTaskModal";
@@ -96,7 +99,6 @@ export default function TasksPage() {
     [],
   );
 
-  // Update current task type
   const updateCurrentTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
       updateTaskType(selectedType, updater);
@@ -104,35 +106,52 @@ export default function TasksPage() {
     [selectedType, updateTaskType],
   );
 
-  // Fetch and load tasks
   useEffect(() => {
-    try {
-      Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
-          method: "GET",
-          credentials: "include",
-        }).then((r) => r.json()),
-        fetch(`${import.meta.env.VITE_API_URL}/task/getAssignedTasks`, {
-          method: "GET",
-          credentials: "include",
-        }).then((r) => r.json()),
-        fetch(`${import.meta.env.VITE_API_URL}/task/getTrackedTasks`, {
-          method: "GET",
-          credentials: "include",
-        }).then((r) => r.json()),
-      ]).then(([myData, assignedData, trackedData]) => {
+    const fetchTasks = async () => {
+      try {
+        const [myResponse, assignedResponse, trackedResponse] =
+          await Promise.all([
+            fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
+              method: "GET",
+              credentials: "include",
+            }),
+            fetch(`${import.meta.env.VITE_API_URL}/task/getAssignedTasks`, {
+              method: "GET",
+              credentials: "include",
+            }),
+            fetch(`${import.meta.env.VITE_API_URL}/task/getTrackedTasks`, {
+              method: "GET",
+              credentials: "include",
+            }),
+          ]);
+
+        const [myData, assignedData, trackedData] = await Promise.all([
+          myResponse.json(),
+          assignedResponse.json(),
+          trackedResponse.json(),
+        ]);
+
         setTasks({
-          my: myData.data,
-          assigned: assignedData.data,
-          tracked: trackedData.data,
+          my: myData.data || [],
+          assigned: assignedData.data || [],
+          tracked: trackedData.data || [],
         });
-      });
-    } catch (error) {
-      setError(true);
-      console.error("Error fetching tasks:", error);
-    } finally {
-      setLoading(false);
-    }
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+        setError(true);
+        setTasks({
+          my: [],
+          assigned: [],
+          tracked: [],
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    setSelectedView(
+      (localStorage.getItem("selectedView") as "tree" | "kanban") || "table",
+    );
+    fetchTasks();
   }, []);
 
   const handleTabChange = (tab: string) => {
@@ -333,6 +352,23 @@ export default function TasksPage() {
   };
 
   const handleCompleteTask = async (taskId: string) => {
+    // Check if all subtasks are complete recursively
+    const currentTask = findTaskAcross(taskId);
+    function isSubTaskComplete(task: Task): boolean {
+      if (task.subTasks && task.subTasks?.length > 0) {
+        for (const subTask of task.subTasks) {
+          if (!isSubTaskComplete(subTask as Task)) {
+            return false;
+          }
+        }
+      }
+      return task.status === "DONE" || task.status === "CANCELLED";
+    }
+    const canComplete = isSubTaskComplete(currentTask!);
+    if (!canComplete) {
+      toast.error("Cannot complete task with incomplete subtasks");
+      return;
+    }
     await handleUpdateTask(taskId, { status: "DONE" });
   };
 
@@ -366,6 +402,20 @@ export default function TasksPage() {
 
   const handleViewChange = (value: string) => {
     setSelectedView(value as "tree" | "kanban" | "table");
+    localStorage.setItem("selectedView", value);
+  };
+
+  // Wrapper functions for Kanban components
+  const handleDeleteTaskById = (taskId: string) => {
+    const task = findTaskAcross(taskId);
+    if (task) {
+      handleDeleteTask(task);
+    }
+  };
+
+  const handleAssignTaskByTask = (task: Task) => {
+    setSelectedTask(task);
+    setShowAssignModal(true);
   };
 
   if (loading) {
@@ -374,9 +424,22 @@ export default function TasksPage() {
 
   if (error) {
     return (
-      <div className="text-red-500 flex w-screen h-screen items-center justify-center">
-        Error fetching tasks.
-      </div>
+      <BasicPageLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <div className="text-red-500 text-xl font-semibold mb-4">
+            Database Connection Error
+          </div>
+          <div className="text-gray-600 mb-4">
+            Unable to connect to the database.
+          </div>
+          <Button
+            onClick={() => window.location.reload()}
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            Retry
+          </Button>
+        </div>
+      </BasicPageLayout>
     );
   }
 
@@ -394,7 +457,7 @@ export default function TasksPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Select defaultValue="table" onValueChange={handleViewChange}>
+            <Select value={selectedView} onValueChange={handleViewChange}>
               <SelectTrigger className="w-[140px] bg-white shadow">
                 <SelectValue placeholder="Select a view" />
               </SelectTrigger>
@@ -474,7 +537,19 @@ export default function TasksPage() {
               openAssignTask={handleAssignTask}
             />
           )}
-          {selectedView === "kanban" && <></>}
+          {selectedView === "kanban" && (
+            <MyTasksKanban
+              tasks={flattenTasks(tasks.my)}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTaskById}
+              onAssignTask={handleAssignTaskByTask}
+              onCreateSubTask={handleOpenSubTask}
+              onPause={handlePauseTask}
+              onStart={handleStartTask}
+              onComplete={handleCompleteTask}
+              onCancel={handleCancelTask}
+            />
+          )}
           {selectedView === "table" && (
             <MyTasksTable
               tasks={tasks.my}
@@ -486,6 +561,15 @@ export default function TasksPage() {
           )}
         </TabsContent>
         <TabsContent value="assigned">
+          {selectedView === "kanban" && (
+            <AssignedTasksKanban
+              tasks={flattenTasks(tasks.assigned)}
+              onPause={handlePauseTask}
+              onStart={handleStartTask}
+              onComplete={handleCompleteTask}
+              onCancel={handleCancelTask}
+            />
+          )}
           {selectedView === "tree" && (
             <AssignedTreeGraph
               tasks={tasks.assigned}
@@ -498,7 +582,6 @@ export default function TasksPage() {
               onPauseTask={handlePauseTask}
             />
           )}
-          {selectedView === "kanban" && <></>}
           {selectedView === "table" && (
             <AssignedTasksTable
               tasks={tasks.assigned}
@@ -511,13 +594,14 @@ export default function TasksPage() {
           )}
         </TabsContent>
         <TabsContent value="tracked">
+          {selectedView === "kanban" && (
+            <PublicTasksKanban tasks={flattenTasks(tasks.tracked)} />
           {selectedView === "tree" && (
             <TrackedTreeGraph tasks={tasks.tracked} />
           )}
           {selectedView === "table" && (
             <PublicTasksTable tasks={tasks.tracked} />
           )}
-          {selectedView === "kanban" && <>Hi!</>}
         </TabsContent>
       </Tabs>
 
