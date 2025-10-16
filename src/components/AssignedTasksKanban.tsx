@@ -44,6 +44,10 @@ function getStatusTailwind(status: string): string {
   }
 }
 
+function isBlockedTask(task: Task): boolean {
+  return task.status === "DONE" || task.status === "CANCELLED";
+}
+
 function formatDeadline(date: Date): string {
   const now = new Date();
   const deadline = new Date(date);
@@ -80,11 +84,14 @@ function TaskCard({
 }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
 
+  const isBlocked = isBlockedTask(task);
+
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: task.id,
     data: {
       task,
     },
+    disabled: isBlocked, // Disable dragging for blocked tasks
   });
 
   const style = {
@@ -95,9 +102,13 @@ function TaskCard({
     <Card
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
-      className={`mb-3 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing ${getStatusTailwind(task.status)}`}
+      {...(!isBlocked ? listeners : {})} // Only apply listeners if not blocked
+      {...(!isBlocked ? attributes : {})} // Only apply attributes if not blocked
+      className={`mb-3 hover:shadow-md transition-shadow ${
+        isBlocked
+          ? "cursor-not-allowed opacity-75"
+          : "cursor-grab active:cursor-grabbing"
+      } ${getStatusTailwind(task.status)}`}
     >
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -325,4 +336,3 @@ export function AssignedTasksKanban({
     </DndContext>
   );
 }
-

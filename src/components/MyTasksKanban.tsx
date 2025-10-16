@@ -39,7 +39,7 @@ import { useState, useEffect } from "react";
 type MyTasksKanbanProps = {
   tasks: Task[];
   onEditTask?: (task: Task) => void;
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
   onComplete?: (taskId: string) => void;
@@ -98,7 +98,7 @@ function TaskCard({
 }: {
   task: Task;
   onEditTask?: (task: Task) => void;
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
   isDragging?: boolean;
@@ -162,7 +162,7 @@ function TaskCard({
                 </DropdownMenuItem>
               )}
               {onDeleteTask && (
-                <DropdownMenuItem onClick={() => onDeleteTask(task.id)}>
+                <DropdownMenuItem onClick={() => onDeleteTask(task)}>
                   <Trash2 className="mr-2 h-4 w-4 text-red-600" />
                   <p className="text-red-600">Delete</p>
                 </DropdownMenuItem>
@@ -214,7 +214,7 @@ function KanbanColumn({
   status: string;
   tasks: Task[];
   onEditTask?: (task: Task) => void;
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (taskId: Task) => void;
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
   activeTaskId?: string | null;
@@ -402,4 +402,3 @@ export function MyTasksKanban({
     </DndContext>
   );
 }
-

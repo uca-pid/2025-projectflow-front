@@ -20,15 +20,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Task } from "../types/task";
-import type { User } from "../types/user";
 import { useState, useEffect } from "react";
 import { Copy, Check, X, Ban, Mail, Send, Link } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AssignTaskModalProps {
   open: boolean;
   onClose: () => void;
   task: Task;
+  onAccept: (task: Task, userId: string) => Promise<void>;
+  onUnassign: (task: Task, userId: string) => Promise<void>;
+  onDecline: (task: Task, userId: string) => Promise<void>;
 }
 
 const ClickHereToCopy = ({ link }: { link: string }) => {
@@ -76,12 +79,19 @@ export const AssignTaskModal = ({
   open,
   onClose,
   task,
+  onAccept,
+  onUnassign,
+  onDecline,
 }: AssignTaskModalProps) => {
+  const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [localTask, setLocalTask] = useState<Task>(task);
 
   const link = `${import.meta.env.VITE_FRONT_URL}/apply/${task?.id}`;
+
+  useEffect(() => {
+    console.log("Updated task in state:", task);
+  }, [task]);
 
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +104,16 @@ export const AssignTaskModal = ({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (email === user?.email) {
+      toast.error("No need to invite yourself silly!");
+      return;
+    }
+
+    if (task?.assignedUsers?.some((u) => u.email === email)) {
+      toast.error("This user is already assigned to this task");
       return;
     }
 
@@ -129,94 +149,6 @@ export const AssignTaskModal = ({
       setIsLoading(false);
     }
   };
-
-  const handleAccept = async (userId: string) => {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/task/${task?.id}/allow/${userId}`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-    if (!response.ok) {
-      toast.error("Failed to assign task");
-      throw new Error("Failed to assign task");
-    } else {
-      const userToAssign = localTask.appliedUsers.find(
-        (user) => user.id === userId,
-      );
-      setLocalTask({
-        ...localTask,
-        trackedUsers: [...localTask.trackedUsers, userToAssign as User],
-        appliedUsers: localTask.appliedUsers.filter(
-          (user) => user.id !== userId,
-        ),
-      });
-      toast.success("Task assigned successfully");
-    }
-  };
-
-  const handleUnassign = async (userId: string) => {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/task/${task?.id}/unassign/${userId}`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-    if (!response.ok) {
-      toast.error("Failed to unassign task");
-      throw new Error("Failed to unassign task");
-    } else {
-      setLocalTask({
-        ...localTask,
-        assignedUsers: localTask.assignedUsers.filter(
-          (user) => user.id !== userId,
-        ),
-        trackedUsers: localTask.trackedUsers.filter(
-          (user) => user.id !== userId,
-        ),
-      });
-      toast.success("Task unassigned successfully");
-    }
-  };
-
-  const handleDecline = async (userId: string) => {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/task/${task?.id}/reject/${userId}`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-    if (!response.ok) {
-      toast.error("Failed to decline task");
-      throw new Error("Failed to decline task");
-    } else {
-      setLocalTask({
-        ...localTask,
-        appliedUsers: localTask.appliedUsers.filter(
-          (user) => user.id !== userId,
-        ),
-      });
-      toast.success("Task declined successfully");
-    }
-  };
-
-  useEffect(() => {
-    if (open) {
-      setLocalTask(task);
-    }
-  }, [open, task]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -308,23 +240,12 @@ export const AssignTaskModal = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {!localTask?.appliedUsers?.length &&
-                  !localTask?.assignedUsers?.length && (
-                    <TableRow>
-                      <TableCell
-                        className="font-medium text-center text-gray-500"
-                        colSpan={4}
-                      >
-                        No users are assigned or applied yet
-                      </TableCell>
-                    </TableRow>
-                  )}
-
-                {localTask?.assignedUsers?.map((user) => (
-                  <TableRow key={user.id}>
+                {/* <CHANGE> Now using task prop directly instead of localTask */}
+                {user && (
+                  <TableRow key={user?.id}>
                     <TableCell className="flex flex-row items-center">
                       <Avatar className="w-8 h-8">
-                        <AvatarImage src={user?.image} />
+                        <AvatarImage src={user?.image || "/placeholder.svg"} />
                         <AvatarFallback>{user?.name?.[0]}</AvatarFallback>
                       </Avatar>
                       <div className="ml-3 font-medium">{user.name}</div>
@@ -332,43 +253,68 @@ export const AssignTaskModal = ({
                     <TableCell className="font-medium">{user.email}</TableCell>
                     <TableCell>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Assigned
+                        Owner
                       </span>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {user.id === localTask?.creatorId ? (
-                        <Button
-                          variant="ghost"
-                          title="We Support Israel"
-                          className="hover:bg-gray-50"
+                      <Button
+                        variant="ghost"
+                        title="We Support Israel"
+                        className="hover:bg-gray-50"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 464 512"
+                          className="text-blue-500"
+                          fill="currentColor"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 464 512"
-                            className="text-blue-500"
-                            fill="currentColor"
-                          >
-                            <path d="M405.68 256l53.21-89.39C473.3 142.4 455.48 112 426.88 112H319.96l-55.95-93.98C256.86 6.01 244.43 0 232 0s-24.86 6.01-32.01 18.02L144.04 112H37.11c-28.6 0-46.42 30.4-32.01 54.61L58.32 256 5.1 345.39C-9.31 369.6 8.51 400 37.11 400h106.93l55.95 93.98C207.14 505.99 219.57 512 232 512s24.86-6.01 32.01-18.02L319.96 400h106.93c28.6 0 46.42-30.4 32.01-54.61L405.68 256zm-12.78-88l-19.8 33.26L353.3 168h39.6zm-52.39 88l-52.39 88H175.88l-52.39-88 52.38-88h112.25l52.39 88zM232 73.72L254.79 112h-45.57L232 73.72zM71.1 168h39.6l-19.8 33.26L71.1 168zm0 176l19.8-33.26L110.7 344H71.1zM232 438.28L209.21 400h45.57L232 438.28zM353.29 344l19.8-33.26L392.9 344h-39.61z" />
-                          </svg>
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          title="Unassign"
-                          onClick={() => handleUnassign(user.id!)}
-                        >
-                          <Ban className="text-red-600" />
-                        </Button>
-                      )}
+                          <path d="M405.68 256l53.21-89.39C473.3 142.4 455.48 112 426.88 112H319.96l-55.95-93.98C256.86 6.01 244.43 0 232 0s-24.86 6.01-32.01 18.02L144.04 112H37.11c-28.6 0-46.42 30.4-32.01 54.61L58.32 256 5.1 345.39C-9.31 369.6 8.51 400 37.11 400h106.93l55.95 93.98C207.14 505.99 219.57 512 232 512s24.86-6.01 32.01-18.02L319.96 400h106.93c28.6 0 46.42-30.4 32.01-54.61L405.68 256zm-12.78-88l-19.8 33.26L353.3 168h39.6zm-52.39 88l-52.39 88H175.88l-52.39-88 52.38-88h112.25l52.39 88zM232 73.72L254.79 112h-45.57L232 73.72zM71.1 168h39.6l-19.8 33.26L71.1 168zm0 176l19.8-33.26L110.7 344H71.1zM232 438.28L209.21 400h45.57L232 438.28zM353.29 344l19.8-33.26L392.9 344h-39.61z" />
+                        </svg>
+                      </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
 
-                {localTask?.trackedUsers?.map((user) => (
+                {task?.assignedUsers?.map(
+                  (user) =>
+                    user.id !== task?.creatorId && (
+                      <TableRow key={user.id}>
+                        <TableCell className="flex flex-row items-center">
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage
+                              src={user?.image || "/placeholder.svg"}
+                            />
+                            <AvatarFallback>{user?.name?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="ml-3 font-medium">{user.name}</div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {user.email}
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Assigned
+                          </span>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <Button
+                            variant="ghost"
+                            title="Unassign"
+                            // <CHANGE> Now calling onUnassign prop
+                            onClick={() => onUnassign(task, user.id!)}
+                          >
+                            <Ban className="text-red-600" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ),
+                )}
+
+                {task?.trackedUsers?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="flex flex-row items-center">
                       <Avatar className="w-8 h-8">
-                        <AvatarImage src={user?.image} />
+                        <AvatarImage src={user?.image || "/placeholder.svg"} />
                         <AvatarFallback>{user?.name?.[0]}</AvatarFallback>
                       </Avatar>
                       <div className="ml-3 font-medium">{user.name}</div>
@@ -380,7 +326,7 @@ export const AssignTaskModal = ({
                       </span>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {user.id === localTask?.creatorId ? (
+                      {user.id === task?.creatorId ? (
                         <Button
                           variant="ghost"
                           title="We Support Israel"
@@ -399,7 +345,7 @@ export const AssignTaskModal = ({
                         <Button
                           variant="ghost"
                           title="Unassign"
-                          onClick={() => handleUnassign(user.id!)}
+                          onClick={() => onUnassign(task, user.id!)}
                         >
                           <Ban className="text-red-600" />
                         </Button>
@@ -409,11 +355,11 @@ export const AssignTaskModal = ({
                 ))}
 
                 {/* Applied Users */}
-                {localTask?.appliedUsers?.map((user) => (
+                {task?.appliedUsers?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="flex flex-row items-center">
                       <Avatar className="w-8 h-8">
-                        <AvatarImage src={user?.image} />
+                        <AvatarImage src={user?.image || "/placeholder.svg"} />
                         <AvatarFallback>{user?.name?.[0]}</AvatarFallback>
                       </Avatar>
                       <div className="ml-3 font-medium">{user.name}</div>
@@ -429,14 +375,15 @@ export const AssignTaskModal = ({
                         <Button
                           variant="ghost"
                           title="Accept"
-                          onClick={() => handleAccept(user.id!)}
+                          onClick={() => onAccept(task, user.id!)}
                         >
                           <Check className="text-green-600" />
                         </Button>
                         <Button
                           variant="ghost"
                           title="Decline"
-                          onClick={() => handleDecline(user.id!)}
+                          // <CHANGE> Now calling onDecline prop
+                          onClick={() => onDecline(task, user.id!)}
                         >
                           <X className="text-red-600" />
                         </Button>
@@ -444,6 +391,19 @@ export const AssignTaskModal = ({
                     </TableCell>
                   </TableRow>
                 ))}
+
+                {!task?.appliedUsers?.length &&
+                  !task?.assignedUsers?.length &&
+                  !task?.trackedUsers?.length && (
+                    <TableRow>
+                      <TableCell
+                        className="font-medium text-center text-gray-500"
+                        colSpan={4}
+                      >
+                        No users are assigned or applied yet
+                      </TableCell>
+                    </TableRow>
+                  )}
               </TableBody>
             </Table>
           </TabsContent>

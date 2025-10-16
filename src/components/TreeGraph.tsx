@@ -34,7 +34,7 @@ interface TreeGraphProps {
   openEditModal: (task: Task) => void;
   openAddSubtask: (task: Task) => void;
   openDeleteTask: (task: Task) => void;
-  openAssignTask: (taskId: string) => void;
+  openAssignTask: (task: Task) => void;
 }
 
 const statusColors = {
@@ -290,7 +290,7 @@ export default function TreeGraph({
                 variant="outline"
                 size="sm"
                 title="Assign Task"
-                onClick={() => openAssignTask(selectedTask.id)}
+                onClick={() => openAssignTask(selectedTask)}
               >
                 <UserPlus className="h-4 w-4" />
               </Button>

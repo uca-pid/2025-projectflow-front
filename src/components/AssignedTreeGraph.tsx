@@ -82,7 +82,9 @@ export default function AssignedTreeGraph({
       setSelectedTask(null);
       return;
     }
-    setSelectedTask(task);
+    if (task.status !== "DONE" && task.status !== "CANCELLED") {
+      setSelectedTask(task);
+    }
   };
 
   // Deselect tasks whenever project changes

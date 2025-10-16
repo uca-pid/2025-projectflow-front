@@ -34,7 +34,7 @@ type MyTasksTableProps = {
   tasks: Task[];
   onEditTask?: (task: Task) => void;
   onDeleteTask?: (task: Task) => void;
-  onAssignTask?: (taskId: string) => void;
+  onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
 };
 
@@ -111,7 +111,7 @@ function TaskRow({
   toggleTask: (taskId: string) => void;
   onEditTask?: (task: Task) => void;
   onDeleteTask?: (task: Task) => void;
-  onAssignTask?: (taskId: string) => void;
+  onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
 }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
@@ -205,7 +205,7 @@ function TaskRow({
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAssignTask!(task.id)}>
+              <DropdownMenuItem onClick={() => onAssignTask!(task)}>
                 <UserPlus className="mr-2 h-4 w-4" />
                 Assign Task
               </DropdownMenuItem>
