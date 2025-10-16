@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { ProfileModal } from "@/components/ProfileModal";
+import { NotificationBell } from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import WonderlandBackground from "@/components/WonderlandBackground";
@@ -42,6 +43,9 @@ export default function BasicPageLayout({ children }: LayoutProps) {
                 <span className="text-gray-600 text-sm hidden sm:block">
                   Hello, {user?.name}!
                 </span>
+                
+                <NotificationBell />
+                
                 <Button
                   variant="outline"
                   size="sm"

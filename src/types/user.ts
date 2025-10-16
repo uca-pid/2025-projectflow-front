@@ -8,3 +8,13 @@ export type User = {
   updatedAt: Date;
   role: string;
 };
+
+export type TaskInvitation = {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  inviterEmail: string;
+  inviterName: string;
+  createdAt: string;
+  status: "pending" | "accepted" | "rejected";
+};
