@@ -1,33 +1,16 @@
 import type { Task } from "@/types/task";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Clock,
-  Check,
-  LoaderCircle,
-  Ban,
-} from "lucide-react";
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Clock, Check, LoaderCircle, Ban } from "lucide-react";
+import { useState, useEffect } from "react";
 
-type PublicTasksKanbanProps = {
+type MyTasksKanbanProps = {
   tasks: Task[];
 };
-
-function getStatusVariant(
-  status: string,
-): "secondary" | "outline" | "destructive" | "default" | undefined {
-  switch (status) {
-    case "DONE":
-      return "secondary";
-    case "IN_PROGRESS":
-      return "default";
-    case "CANCELLED":
-      return "destructive";
-    case "TODO":
-      return "outline";
-    default:
-      return undefined;
-  }
-}
 
 function getStatusTailwind(status: string): string {
   switch (status) {
@@ -73,70 +56,62 @@ function TaskCard({ task }: { task: Task }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
 
   return (
-    <Card className="mb-3 hover:shadow-md transition-shadow">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{task.title}</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="text-sm text-muted-foreground mb-2 line-clamp-2">
-          {task.description}
-        </div>
-        
-        <div className="text-xs text-muted-foreground mb-2">
-          {formatDeadline(new Date(task.deadline))}
-        </div>
-
+    <Card className={`mb-3 hover:shadow-md  ${getStatusTailwind(task.status)}`}>
+      <CardHeader>
         <div className="flex items-center justify-between">
-          <Badge
-            className={`${getStatusTailwind(task.status)} text-xs`}
-            variant={getStatusVariant(task.status)}
-          >
-            {task.status === "TODO" && (
-              <>
-                <Clock className="w-3 h-3 mr-1" />
-                Pending
-              </>
-            )}
+          <CardTitle className="text-sm font-medium flex gap-x-2 items-center">
+            {task.status === "TODO" && <Clock className="w-4 h-4" />}
             {task.status === "IN_PROGRESS" && (
-              <>
-                <LoaderCircle className="w-3 h-3 mr-1 animate-spin" />
-                In Progress
-              </>
+              <LoaderCircle className="w-4 h-4 animate-spin" />
             )}
-            {task.status === "DONE" && (
-              <>
-                <Check className="w-3 h-3 mr-1" />
-                Completed
-              </>
-            )}
-            {task.status === "CANCELLED" && (
-              <>
-                <Ban className="w-4 h-4 mr-1" />
-                Cancelled
-              </>
-            )}
-          </Badge>
-          
-          {hasSubTasks && (
-            <span className="text-xs text-muted-foreground">
-              {task.subTasks!.length} subtask{task.subTasks!.length !== 1 ? 's' : ''}
-            </span>
-          )}
+            {task.status === "DONE" && <Check className="w-4 h-4" />}
+            {task.status === "CANCELLED" && <Ban className="w-4 h-4" />}
+            {task.title}
+          </CardTitle>
         </div>
-      </CardContent>
+        <CardDescription>
+          <div className="text-sm text-muted-foreground mb-2 line-clamp-2">
+            {task.description}
+          </div>
+          <div className="text-xs text-muted-foreground mb-2">
+            {formatDeadline(new Date(task.deadline))}
+          </div>
+
+          <div className="flex items-center justify-between">
+            {task.parentTaskId && (
+              <span className="text-xs text-muted-foreground">
+                Subtask of {task.parentTask?.title}
+              </span>
+            )}
+          </div>
+
+          <div className="mt-1 flex items-center justify-between">
+            {hasSubTasks && (
+              <span className="text-xs text-muted-foreground">
+                {task.subTasks!.length} subtask
+                {task.subTasks!.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        </CardDescription>
+      </CardHeader>
     </Card>
   );
 }
 
-function KanbanColumn({ 
-  title, 
-  tasks 
-}: { 
-  title: string; 
+function KanbanColumn({
+  title,
+  tasks,
+}: {
+  title: string;
+  status: string;
   tasks: Task[];
+  onDeleteTask?: (taskId: string) => void;
+  onAssignTask?: (task: Task) => void;
+  activeTaskId?: string | null;
 }) {
   return (
-    <div className="flex-1 min-h-0 bg-gray-50 rounded-lg p-4">
+    <div className="flex-1 min-h-0 bg-gray-50 rounded-lg p-4 m-3 transition-colors">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-medium text-sm text-gray-700 uppercase tracking-wider">
           {title}
@@ -149,29 +124,31 @@ function KanbanColumn({
         {tasks.map((task) => (
           <TaskCard key={task.id} task={task} />
         ))}
-        {tasks.length === 0 && (
-          <div className="text-center py-8 text-gray-400 text-sm">
-            No tasks
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-export function PublicTasksKanban({ tasks }: PublicTasksKanbanProps) {
+export function PublicTasksKanban({ tasks = [] }: MyTasksKanbanProps) {
   // Group tasks by status
-  const todoTasks = tasks.filter(task => task.status === "TODO");
-  const inProgressTasks = tasks.filter(task => task.status === "IN_PROGRESS");
-  const doneTasks = tasks.filter(task => task.status === "DONE");
-  const cancelledTasks = tasks.filter(task => task.status === "CANCELLED");
+  const [todoTasks, setTodoTasks] = useState<Task[]>([]);
+  const [inProgressTasks, setInProgressTasks] = useState<Task[]>([]);
+  const [doneTasks, setDoneTasks] = useState<Task[]>([]);
+  const [cancelledTasks, setCancelledTasks] = useState<Task[]>([]);
 
-  if (!tasks || tasks.length === 0) {
+  useEffect(() => {
+    setTodoTasks(tasks.filter((task) => task.status === "TODO"));
+    setInProgressTasks(tasks.filter((task) => task.status === "IN_PROGRESS"));
+    setDoneTasks(tasks.filter((task) => task.status === "DONE"));
+    setCancelledTasks(tasks.filter((task) => task.status === "CANCELLED"));
+  }, [tasks]);
+
+  if (tasks.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-500 text-lg mb-2">Could not access tasks</div>
+        <div className="text-gray-500 text-lg mb-2">No tasks created yet</div>
         <p className="text-gray-400">
-          Make sure they exist, you are accepted as a viewer, or are public
+          Create your first task to get started with project management
         </p>
       </div>
     );
@@ -179,22 +156,19 @@ export function PublicTasksKanban({ tasks }: PublicTasksKanbanProps) {
 
   return (
     <div className="flex gap-6 h-full overflow-x-auto pb-4">
-      <KanbanColumn
-        title="To Do"
-        tasks={todoTasks}
-      />
+      <KanbanColumn title="To Do" status="TODO" tasks={todoTasks} />
       <KanbanColumn
         title="In Progress"
+        status="IN_PROGRESS"
         tasks={inProgressTasks}
       />
-      <KanbanColumn
-        title="Completed"
-        tasks={doneTasks}
-      />
+      <KanbanColumn title="Completed" status="DONE" tasks={doneTasks} />
       <KanbanColumn
         title="Cancelled"
+        status="CANCELLED"
         tasks={cancelledTasks}
       />
     </div>
   );
 }
+

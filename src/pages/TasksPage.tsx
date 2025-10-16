@@ -97,7 +97,6 @@ export default function TasksPage() {
     [],
   );
 
-
   const updateCurrentTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
       updateTaskType(selectedType, updater);
@@ -105,24 +104,24 @@ export default function TasksPage() {
     [selectedType, updateTaskType],
   );
 
-
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const [myResponse, assignedResponse, trackedResponse] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
-            method: "GET",
-            credentials: "include",
-          }),
-          fetch(`${import.meta.env.VITE_API_URL}/task/getAssignedTasks`, {
-            method: "GET",
-            credentials: "include",
-          }),
-          fetch(`${import.meta.env.VITE_API_URL}/task/getTrackedTasks`, {
-            method: "GET",
-            credentials: "include",
-          }),
-        ]);
+        const [myResponse, assignedResponse, trackedResponse] =
+          await Promise.all([
+            fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
+              method: "GET",
+              credentials: "include",
+            }),
+            fetch(`${import.meta.env.VITE_API_URL}/task/getAssignedTasks`, {
+              method: "GET",
+              credentials: "include",
+            }),
+            fetch(`${import.meta.env.VITE_API_URL}/task/getTrackedTasks`, {
+              method: "GET",
+              credentials: "include",
+            }),
+          ]);
 
         const [myData, assignedData, trackedData] = await Promise.all([
           myResponse.json(),
@@ -147,7 +146,9 @@ export default function TasksPage() {
         setLoading(false);
       }
     };
-
+    setSelectedView(
+      (localStorage.getItem("selectedView") as "tree" | "kanban") || "table",
+    );
     fetchTasks();
   }, []);
 
@@ -357,6 +358,23 @@ export default function TasksPage() {
   };
 
   const handleCompleteTask = async (taskId: string) => {
+    // Check if all subtasks are complete recursively
+    const currentTask = findTaskAcross(taskId);
+    function isSubTaskComplete(task: Task): boolean {
+      if (task.subTasks && task.subTasks?.length > 0) {
+        for (const subTask of task.subTasks) {
+          if (!isSubTaskComplete(subTask as Task)) {
+            return false;
+          }
+        }
+      }
+      return task.status === "DONE" || task.status === "CANCELLED";
+    }
+    const canComplete = isSubTaskComplete(currentTask!);
+    if (!canComplete) {
+      toast.error("Cannot complete task with incomplete subtasks");
+      return;
+    }
     await handleUpdateTask(taskId, { status: "DONE" });
   };
 
@@ -390,6 +408,7 @@ export default function TasksPage() {
 
   const handleViewChange = (value: string) => {
     setSelectedView(value as "tree" | "kanban" | "table");
+    localStorage.setItem("selectedView", value);
   };
 
   // Wrapper functions for Kanban components
@@ -419,8 +438,8 @@ export default function TasksPage() {
           <div className="text-gray-600 mb-4">
             Unable to connect to the database.
           </div>
-          <Button 
-            onClick={() => window.location.reload()} 
+          <Button
+            onClick={() => window.location.reload()}
             className="bg-blue-500 hover:bg-blue-600"
           >
             Retry
@@ -444,7 +463,7 @@ export default function TasksPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Select defaultValue="table" onValueChange={handleViewChange}>
+            <Select value={selectedView} onValueChange={handleViewChange}>
               <SelectTrigger className="w-[140px] bg-white shadow">
                 <SelectValue placeholder="Select a view" />
               </SelectTrigger>
@@ -526,11 +545,15 @@ export default function TasksPage() {
           )}
           {selectedView === "kanban" && (
             <MyTasksKanban
-              tasks={tasks.my}
+              tasks={flattenTasks(tasks.my)}
               onEditTask={handleEditTask}
               onDeleteTask={handleDeleteTaskById}
               onAssignTask={handleAssignTaskByTask}
               onCreateSubTask={handleOpenSubTask}
+              onPause={handlePauseTask}
+              onStart={handleStartTask}
+              onComplete={handleCompleteTask}
+              onCancel={handleCancelTask}
             />
           )}
           {selectedView === "table" && (
@@ -546,12 +569,11 @@ export default function TasksPage() {
         <TabsContent value="assigned">
           {selectedView === "kanban" && (
             <AssignedTasksKanban
-              tasks={tasks.assigned}
-              onStartTask={handleStartTask}
-              onPauseTask={handlePauseTask}
-              onCompleteTask={handleCompleteTask}
-              onCancelTask={handleCancelTask}
-              onCreateSubTask={handleOpenSubTask}
+              tasks={flattenTasks(tasks.assigned)}
+              onPause={handlePauseTask}
+              onStart={handleStartTask}
+              onComplete={handleCompleteTask}
+              onCancel={handleCancelTask}
             />
           )}
           {selectedView === "table" && (
@@ -567,7 +589,7 @@ export default function TasksPage() {
         </TabsContent>
         <TabsContent value="tracked">
           {selectedView === "kanban" && (
-            <PublicTasksKanban tasks={tasks.tracked} />
+            <PublicTasksKanban tasks={flattenTasks(tasks.tracked)} />
           )}
           {selectedView === "table" && (
             <PublicTasksTable tasks={tasks.tracked} />
