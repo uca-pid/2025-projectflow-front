@@ -14,6 +14,8 @@ import { type Task } from "@/types/task";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PublicTasksTable } from "@/components/PublicTasksTable";
 import TreeGraph from "@/components/TreeGraph";
+import AssignedTreeGraph from "@/components/AssignedTreeGraph";
+import TrackedTreeGraph from "@/components/TrackedTreeGraph";
 import {
   Select,
   SelectContent,
@@ -132,14 +134,6 @@ export default function TasksPage() {
       setLoading(false);
     }
   }, []);
-
-  const findTaskAcross = (taskId: string) => {
-    return (
-      tasks.my.find((task) => task.id === taskId) ||
-      tasks.assigned.find((task) => task.id === taskId) ||
-      tasks.tracked.find((task) => task.id === taskId)
-    );
-  };
 
   const handleTabChange = (tab: string) => {
     setSelectedType(tab as TaskType);
@@ -492,17 +486,38 @@ export default function TasksPage() {
           )}
         </TabsContent>
         <TabsContent value="assigned">
-          <AssignedTasksTable
-            tasks={tasks.assigned}
-            onStartTask={handleStartTask}
-            onPauseTask={handlePauseTask}
-            onCompleteTask={handleCompleteTask}
-            onCancelTask={handleCancelTask}
-            onCreateSubTask={handleOpenSubTask}
-          />
+          {selectedView === "tree" && (
+            <AssignedTreeGraph
+              tasks={tasks.assigned}
+              selectedTask={selectedTask}
+              setSelectedTask={setSelectedTask}
+              openAddSubtask={handleOpenSubTask}
+              onCompleteTask={handleCompleteTask}
+              onCancelTask={handleCancelTask}
+              onStartTask={handleStartTask}
+              onPauseTask={handlePauseTask}
+            />
+          )}
+          {selectedView === "kanban" && <></>}
+          {selectedView === "table" && (
+            <AssignedTasksTable
+              tasks={tasks.assigned}
+              onStartTask={handleStartTask}
+              onPauseTask={handlePauseTask}
+              onCompleteTask={handleCompleteTask}
+              onCancelTask={handleCancelTask}
+              onCreateSubTask={handleOpenSubTask}
+            />
+          )}
         </TabsContent>
         <TabsContent value="tracked">
-          <PublicTasksTable tasks={tasks.tracked} />
+          {selectedView === "tree" && (
+            <TrackedTreeGraph tasks={tasks.tracked} />
+          )}
+          {selectedView === "table" && (
+            <PublicTasksTable tasks={tasks.tracked} />
+          )}
+          {selectedView === "kanban" && <>Hi!</>}
         </TabsContent>
       </Tabs>
 
