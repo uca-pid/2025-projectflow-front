@@ -20,7 +20,7 @@ import {
 import { useState } from "react";
 
 type AssignedTasksTableProps = {
-  task: Task;
+  tasks: Task[];
 };
 
 function getStatusVariant(
@@ -182,7 +182,7 @@ function TaskRow({
   );
 }
 
-export function PublicTasksTable({ task }: AssignedTasksTableProps) {
+export function PublicTasksTable({ tasks }: AssignedTasksTableProps) {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
   const toggleTask = (taskId: string) => {
@@ -197,11 +197,13 @@ export function PublicTasksTable({ task }: AssignedTasksTableProps) {
     });
   };
 
-  if (!task || !task.isPublic) {
+  if (!tasks || tasks.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-500 text-lg mb-2">Could not access task</div>
-        <p className="text-gray-400">Make sure the task exists and is public</p>
+        <div className="text-gray-500 text-lg mb-2">Could not access tasks</div>
+        <p className="text-gray-400">
+          Make sure they exist, you are accepted as a viewer, or are public
+        </p>
       </div>
     );
   }
@@ -226,7 +228,7 @@ export function PublicTasksTable({ task }: AssignedTasksTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {[task].map((task) => (
+          {tasks.map((task) => (
             <TaskRow
               key={task?.id}
               task={task}

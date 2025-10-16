@@ -33,7 +33,7 @@ import { useState } from "react";
 type MyTasksTableProps = {
   tasks: Task[];
   onEditTask?: (task: Task) => void;
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
   onAssignTask?: (taskId: string) => void;
   onCreateSubTask?: (task: Task) => void;
 };
@@ -110,7 +110,7 @@ function TaskRow({
   expandedTasks: Set<string>;
   toggleTask: (taskId: string) => void;
   onEditTask?: (task: Task) => void;
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
   onAssignTask?: (taskId: string) => void;
   onCreateSubTask?: (task: Task) => void;
 }) {
@@ -210,7 +210,7 @@ function TaskRow({
                 Assign Task
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onDeleteTask!(task.id)}
+                onClick={() => onDeleteTask!(task)}
                 className="text-red-600"
               >
                 <Trash2 className="mr-2 h-4 w-4 text-red-600" />

@@ -281,7 +281,9 @@ export function AssignedTasksTable({
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 text-lg mb-2">No tasks assigned</div>
-        <p className="text-gray-400">Apply to a task to get started</p>
+        <p className="text-gray-400">
+          You don&apos;t have any tasks assigned, get invited to one!
+        </p>
       </div>
     );
   }

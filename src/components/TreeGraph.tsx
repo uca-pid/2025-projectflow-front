@@ -33,7 +33,7 @@ interface TreeGraphProps {
   setSelectedTask: (task: Task | null) => void;
   openEditModal: (task: Task) => void;
   openAddSubtask: (task: Task) => void;
-  openDeleteTask: (taskId: string) => void;
+  openDeleteTask: (task: Task) => void;
   openAssignTask: (taskId: string) => void;
 }
 
@@ -271,7 +271,7 @@ export default function TreeGraph({
                 className="text-red-500"
                 size="sm"
                 title="Delete Task"
-                onClick={() => openDeleteTask(selectedTask.id)}
+                onClick={() => openDeleteTask(selectedTask)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

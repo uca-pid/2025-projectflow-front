@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MyTasksTable } from "@/components/MyTasksTable";
 import { AssignedTasksTable } from "@/components/AssignedTasksTable";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
@@ -12,6 +12,7 @@ import { AssignTaskModal } from "@/components/AssignTaskModal";
 import LoadingPage from "./LoadingPage";
 import { type Task } from "@/types/task";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PublicTasksTable } from "@/components/PublicTasksTable";
 import TreeGraph from "@/components/TreeGraph";
 import {
   Select,
@@ -25,13 +26,20 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { Plus } from "lucide-react";
 
+type TaskType = "my" | "assigned" | "tracked";
+
+type TasksState = {
+  my: Task[];
+  assigned: Task[];
+  tracked: Task[];
+};
+
 function flattenTasks(tasks: Partial<Task>[]): Task[] {
   const map = new Map<string, Task>();
 
   function traverse(list: Partial<Task>[]) {
     for (const task of list) {
       if (task.id) {
-        // if not already stored, add it
         if (!map.has(task.id)) {
           map.set(task.id, task as Task);
         }
@@ -50,10 +58,11 @@ function flattenTasks(tasks: Partial<Task>[]): Task[] {
 export default function TasksPage() {
   const { user } = useAuth();
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-
-  const [myTasks, setMyTasks] = useState<Task[]>([]);
-  const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<TasksState>({
+    my: [],
+    assigned: [],
+    tracked: [],
+  });
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
@@ -61,6 +70,7 @@ export default function TasksPage() {
   const [selectedView, setSelectedView] = useState<"tree" | "kanban" | "table">(
     "table",
   );
+  const [selectedType, setSelectedType] = useState<TaskType>("my");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCreateSubModal, setShowCreateSubModal] = useState(false);
@@ -70,17 +80,51 @@ export default function TasksPage() {
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
+  // Get current tasks based on selected type
+  const currentTasks = tasks[selectedType];
+
+  // Helper to update a specific task type
+  const updateTaskType = useCallback(
+    (type: TaskType, updater: (prev: Task[]) => Task[]) => {
+      setTasks((prev) => ({
+        ...prev,
+        [type]: updater(prev[type]),
+      }));
+    },
+    [],
+  );
+
+  // Update current task type
+  const updateCurrentTasks = useCallback(
+    (updater: (prev: Task[]) => Task[]) => {
+      updateTaskType(selectedType, updater);
+    },
+    [selectedType, updateTaskType],
+  );
+
   // Fetch and load tasks
   useEffect(() => {
     try {
-      fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
-        method: "GET",
-        credentials: "include",
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setTasks(data.data);
+      Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
+          method: "GET",
+          credentials: "include",
+        }).then((r) => r.json()),
+        fetch(`${import.meta.env.VITE_API_URL}/task/getAssignedTasks`, {
+          method: "GET",
+          credentials: "include",
+        }).then((r) => r.json()),
+        fetch(`${import.meta.env.VITE_API_URL}/task/getTrackedTasks`, {
+          method: "GET",
+          credentials: "include",
+        }).then((r) => r.json()),
+      ]).then(([myData, assignedData, trackedData]) => {
+        setTasks({
+          my: myData.data,
+          assigned: assignedData.data,
+          tracked: trackedData.data,
         });
+      });
     } catch (error) {
       setError(true);
       console.error("Error fetching tasks:", error);
@@ -89,41 +133,26 @@ export default function TasksPage() {
     }
   }, []);
 
-  // Filter tasks
-  useEffect(() => {
-    const myTasks = tasks.filter((task) => task.creatorId === user?.id);
-    const assignedTasks = tasks.filter(
-      (task) =>
-        task.assignedUsers?.some((user) => user.id === user?.id) &&
-        task.creatorId !== user?.id,
-    );
-    setMyTasks(myTasks);
-    setAssignedTasks(assignedTasks);
-  }, [tasks, user]);
-
-  if (loading) {
-    return <LoadingPage />;
-  }
-
-  if (error) {
+  const findTaskAcross = (taskId: string) => {
     return (
-      <div className="text-red-500 flex w-screen h-screen items-center justify-center">
-        Error fetching tasks.
-      </div>
+      tasks.my.find((task) => task.id === taskId) ||
+      tasks.assigned.find((task) => task.id === taskId) ||
+      tasks.tracked.find((task) => task.id === taskId)
     );
-  }
+  };
+
+  const handleTabChange = (tab: string) => {
+    setSelectedType(tab as TaskType);
+  };
 
   const handleEditTask = (task: Task) => {
     setSelectedTask(task);
     setShowEditModal(true);
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    const taskToDelete = tasks.find((task) => task.id === taskId);
-    if (taskToDelete) {
-      setSelectedTask(taskToDelete);
-      setShowDeleteModal(true);
-    }
+  const handleDeleteTask = (task: Task) => {
+    setSelectedTask(task);
+    setShowDeleteModal(true);
   };
 
   const handleCreateTask = async (taskData: Task) => {
@@ -147,9 +176,7 @@ export default function TasksPage() {
     toast.success("Task created successfully");
 
     const data = await response.json();
-    taskData = data.data;
-
-    setTasks((prevTasks) => [...prevTasks, taskData]);
+    updateCurrentTasks((prev) => [...prev, data.data]);
     setShowCreateModal(false);
   };
 
@@ -176,11 +203,11 @@ export default function TasksPage() {
     const serverTask = await response.json();
 
     function addSubTask(
-      tasks: Partial<Task>[],
+      taskList: Partial<Task>[],
       parentId: string,
       newTask: Task,
     ): Task[] {
-      return tasks.map((task) => {
+      return taskList.map((task) => {
         if (task.id === parentId) {
           return {
             ...task,
@@ -199,13 +226,11 @@ export default function TasksPage() {
       }) as Task[];
     }
 
-    setTasks((prevTasks) =>
-      addSubTask(prevTasks, serverTask.data.parentTaskId, serverTask.data),
+    updateCurrentTasks((prev) =>
+      addSubTask(prev, serverTask.data.parentTaskId, serverTask.data),
     );
 
-    setTasks((prevTasks) => [...prevTasks, serverTask.data]);
-
-    setShowCreateModal(false);
+    setShowCreateSubModal(false);
   };
 
   const handleUpdateTask = async (taskId: string, taskData: Partial<Task>) => {
@@ -228,16 +253,14 @@ export default function TasksPage() {
 
     toast.success("Task updated successfully");
     const data = await response.json();
-    taskData = data.data;
 
     function patchSubTask(
-      tasks: Partial<Task>[],
-      taskId: string,
+      taskList: Partial<Task>[],
+      id: string,
       updatedFields: Partial<Task>,
     ): Task[] {
-      return tasks.map((task) => {
-        if (task.id === taskId) {
-          // Patch the task
+      return taskList.map((task) => {
+        if (task.id === id) {
           return {
             ...task,
             ...updatedFields,
@@ -247,7 +270,7 @@ export default function TasksPage() {
         if (task.subTasks && task.subTasks.length > 0) {
           return {
             ...task,
-            subTasks: patchSubTask(task.subTasks, taskId, updatedFields),
+            subTasks: patchSubTask(task.subTasks, id, updatedFields),
           };
         }
 
@@ -255,7 +278,7 @@ export default function TasksPage() {
       }) as Task[];
     }
 
-    setTasks((prevTasks) => patchSubTask(prevTasks, taskData.id!, taskData));
+    updateCurrentTasks((prev) => patchSubTask(prev, data.data.id, data.data));
 
     setShowEditModal(false);
     setSelectedTask(null);
@@ -279,10 +302,10 @@ export default function TasksPage() {
     toast.success("Deleted task successfully");
 
     function deleteTaskRecursively(
-      tasks: Partial<Task>[],
+      taskList: Partial<Task>[],
       taskIdToDelete: string,
     ): Task[] {
-      return tasks
+      return taskList
         .filter((task) => task.id !== taskIdToDelete)
         .map((task) => {
           if (task.subTasks && task.subTasks.length > 0) {
@@ -295,8 +318,14 @@ export default function TasksPage() {
         }) as Task[];
     }
 
-    setTasks((prevTasks) => deleteTaskRecursively(prevTasks, taskId));
-    setMyTasks((prevTasks) => deleteTaskRecursively(prevTasks, taskId));
+    // Delete from current view
+    updateCurrentTasks((prev) => deleteTaskRecursively(prev, taskId));
+
+    // Also delete from "my" if it's not already the current view
+    if (selectedType !== "my") {
+      updateTaskType("my", (prev) => deleteTaskRecursively(prev, taskId));
+    }
+
     setShowDeleteModal(false);
     setSelectedTask(null);
   };
@@ -319,21 +348,21 @@ export default function TasksPage() {
 
   const handleAssignTask = (taskId: string) => {
     setShowAssignModal(true);
-    function findTask(tasks: Partial<Task>[], taskId: string): Task | null {
-      for (const task of tasks) {
-        if (task.id === taskId) {
+    function findTask(taskList: Partial<Task>[], id: string): Task | null {
+      for (const task of taskList) {
+        if (task.id === id) {
           return task as Task;
         }
 
         if (task.subTasks && task.subTasks.length > 0) {
-          const found = findTask(task.subTasks, taskId);
+          const found = findTask(task.subTasks, id);
           if (found) return found;
         }
       }
 
       return null;
     }
-    setSelectedTask(findTask(tasks, taskId)!);
+    setSelectedTask(findTask(currentTasks, taskId)!);
   };
 
   const handleOpenSubTask = (task: Task) => {
@@ -344,6 +373,18 @@ export default function TasksPage() {
   const handleViewChange = (value: string) => {
     setSelectedView(value as "tree" | "kanban" | "table");
   };
+
+  if (loading) {
+    return <LoadingPage />;
+  }
+
+  if (error) {
+    return (
+      <div className="text-red-500 flex w-screen h-screen items-center justify-center">
+        Error fetching tasks.
+      </div>
+    );
+  }
 
   return (
     <BasicPageLayout>
@@ -384,14 +425,14 @@ export default function TasksPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-gray-900">
-            {flattenTasks(tasks).length}
+            {flattenTasks(currentTasks).length}
           </div>
           <div className="text-gray-600">Total Tasks</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-blue-600">
             {
-              flattenTasks(tasks).filter(
+              flattenTasks(currentTasks).filter(
                 (task) => task.status === "IN_PROGRESS",
               ).length
             }
@@ -401,8 +442,9 @@ export default function TasksPage() {
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-green-600">
             {
-              flattenTasks(tasks).filter((task) => task.status === "DONE")
-                .length
+              flattenTasks(currentTasks).filter(
+                (task) => task.status === "DONE",
+              ).length
             }
           </div>
           <div className="text-gray-600">Completed</div>
@@ -410,25 +452,26 @@ export default function TasksPage() {
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-red-600">
             {
-              flattenTasks(tasks).filter((task) => task.status === "CANCELLED")
-                .length
+              flattenTasks(currentTasks).filter(
+                (task) => task.status === "CANCELLED",
+              ).length
             }
           </div>
           <div className="text-gray-600">Cancelled</div>
         </div>
       </div>
 
-      <Tabs defaultValue="my-tasks">
+      <Tabs defaultValue="my" onValueChange={handleTabChange}>
         <TabsList>
-          <TabsTrigger value="my-tasks">My Tasks</TabsTrigger>
-          <TabsTrigger value="assigned-tasks">Assigned Tasks</TabsTrigger>
-          <TabsTrigger value="tracked-tasks">Tracked Tasks</TabsTrigger>
+          <TabsTrigger value="my">My Tasks</TabsTrigger>
+          <TabsTrigger value="assigned">Assigned Tasks</TabsTrigger>
+          <TabsTrigger value="tracked">Tracked Tasks</TabsTrigger>
         </TabsList>
         {/* Tasks Table */}
-        <TabsContent value="my-tasks">
+        <TabsContent value="my">
           {selectedView === "tree" && (
             <TreeGraph
-              tasks={myTasks}
+              tasks={tasks.my}
               selectedTask={selectedTask}
               setSelectedTask={setSelectedTask}
               openEditModal={handleEditTask}
@@ -440,7 +483,7 @@ export default function TasksPage() {
           {selectedView === "kanban" && <></>}
           {selectedView === "table" && (
             <MyTasksTable
-              tasks={myTasks}
+              tasks={tasks.my}
               onEditTask={handleEditTask}
               onDeleteTask={handleDeleteTask}
               onAssignTask={handleAssignTask}
@@ -448,9 +491,9 @@ export default function TasksPage() {
             />
           )}
         </TabsContent>
-        <TabsContent value="assigned-tasks">
+        <TabsContent value="assigned">
           <AssignedTasksTable
-            tasks={assignedTasks}
+            tasks={tasks.assigned}
             onStartTask={handleStartTask}
             onPauseTask={handlePauseTask}
             onCompleteTask={handleCompleteTask}
@@ -458,7 +501,9 @@ export default function TasksPage() {
             onCreateSubTask={handleOpenSubTask}
           />
         </TabsContent>
-        <TabsContent value="tracked-tasks">Hi!</TabsContent>
+        <TabsContent value="tracked">
+          <PublicTasksTable tasks={tasks.tracked} />
+        </TabsContent>
       </Tabs>
 
       {/* Modals */}
