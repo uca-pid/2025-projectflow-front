@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { MyTasksTable } from "@/components/MyTasksTable";
 import { AssignedTasksTable } from "@/components/AssignedTasksTable";
+import { MyTasksKanban } from "@/components/MyTasksKanban";
+import { AssignedTasksKanban } from "@/components/AssignedTasksKanban";
+import { PublicTasksKanban } from "@/components/PublicTasksKanban";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { CreateSubTaskModal } from "@/components/CreateSubTaskModal";
 import { EditTaskModal } from "@/components/EditTaskModal";
@@ -94,7 +97,7 @@ export default function TasksPage() {
     [],
   );
 
-  // Update current task type
+
   const updateCurrentTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
       updateTaskType(selectedType, updater);
@@ -102,35 +105,50 @@ export default function TasksPage() {
     [selectedType, updateTaskType],
   );
 
-  // Fetch and load tasks
+
   useEffect(() => {
-    try {
-      Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
-          method: "GET",
-          credentials: "include",
-        }).then((r) => r.json()),
-        fetch(`${import.meta.env.VITE_API_URL}/task/getAssignedTasks`, {
-          method: "GET",
-          credentials: "include",
-        }).then((r) => r.json()),
-        fetch(`${import.meta.env.VITE_API_URL}/task/getTrackedTasks`, {
-          method: "GET",
-          credentials: "include",
-        }).then((r) => r.json()),
-      ]).then(([myData, assignedData, trackedData]) => {
+    const fetchTasks = async () => {
+      try {
+        const [myResponse, assignedResponse, trackedResponse] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
+            method: "GET",
+            credentials: "include",
+          }),
+          fetch(`${import.meta.env.VITE_API_URL}/task/getAssignedTasks`, {
+            method: "GET",
+            credentials: "include",
+          }),
+          fetch(`${import.meta.env.VITE_API_URL}/task/getTrackedTasks`, {
+            method: "GET",
+            credentials: "include",
+          }),
+        ]);
+
+        const [myData, assignedData, trackedData] = await Promise.all([
+          myResponse.json(),
+          assignedResponse.json(),
+          trackedResponse.json(),
+        ]);
+
         setTasks({
-          my: myData.data,
-          assigned: assignedData.data,
-          tracked: trackedData.data,
+          my: myData.data || [],
+          assigned: assignedData.data || [],
+          tracked: trackedData.data || [],
         });
-      });
-    } catch (error) {
-      setError(true);
-      console.error("Error fetching tasks:", error);
-    } finally {
-      setLoading(false);
-    }
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+        setError(true);
+        setTasks({
+          my: [],
+          assigned: [],
+          tracked: [],
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
   }, []);
 
   const findTaskAcross = (taskId: string) => {
@@ -374,15 +392,41 @@ export default function TasksPage() {
     setSelectedView(value as "tree" | "kanban" | "table");
   };
 
+  // Wrapper functions for Kanban components
+  const handleDeleteTaskById = (taskId: string) => {
+    const task = findTaskAcross(taskId);
+    if (task) {
+      handleDeleteTask(task);
+    }
+  };
+
+  const handleAssignTaskByTask = (task: Task) => {
+    setSelectedTask(task);
+    setShowAssignModal(true);
+  };
+
   if (loading) {
     return <LoadingPage />;
   }
 
   if (error) {
     return (
-      <div className="text-red-500 flex w-screen h-screen items-center justify-center">
-        Error fetching tasks.
-      </div>
+      <BasicPageLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <div className="text-red-500 text-xl font-semibold mb-4">
+            Database Connection Error
+          </div>
+          <div className="text-gray-600 mb-4">
+            Unable to connect to the database.
+          </div>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            Retry
+          </Button>
+        </div>
+      </BasicPageLayout>
     );
   }
 
@@ -480,7 +524,15 @@ export default function TasksPage() {
               openAssignTask={handleAssignTask}
             />
           )}
-          {selectedView === "kanban" && <></>}
+          {selectedView === "kanban" && (
+            <MyTasksKanban
+              tasks={tasks.my}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTaskById}
+              onAssignTask={handleAssignTaskByTask}
+              onCreateSubTask={handleOpenSubTask}
+            />
+          )}
           {selectedView === "table" && (
             <MyTasksTable
               tasks={tasks.my}
@@ -492,17 +544,34 @@ export default function TasksPage() {
           )}
         </TabsContent>
         <TabsContent value="assigned">
-          <AssignedTasksTable
-            tasks={tasks.assigned}
-            onStartTask={handleStartTask}
-            onPauseTask={handlePauseTask}
-            onCompleteTask={handleCompleteTask}
-            onCancelTask={handleCancelTask}
-            onCreateSubTask={handleOpenSubTask}
-          />
+          {selectedView === "kanban" && (
+            <AssignedTasksKanban
+              tasks={tasks.assigned}
+              onStartTask={handleStartTask}
+              onPauseTask={handlePauseTask}
+              onCompleteTask={handleCompleteTask}
+              onCancelTask={handleCancelTask}
+              onCreateSubTask={handleOpenSubTask}
+            />
+          )}
+          {selectedView === "table" && (
+            <AssignedTasksTable
+              tasks={tasks.assigned}
+              onStartTask={handleStartTask}
+              onPauseTask={handlePauseTask}
+              onCompleteTask={handleCompleteTask}
+              onCancelTask={handleCancelTask}
+              onCreateSubTask={handleOpenSubTask}
+            />
+          )}
         </TabsContent>
         <TabsContent value="tracked">
-          <PublicTasksTable tasks={tasks.tracked} />
+          {selectedView === "kanban" && (
+            <PublicTasksKanban tasks={tasks.tracked} />
+          )}
+          {selectedView === "table" && (
+            <PublicTasksTable tasks={tasks.tracked} />
+          )}
         </TabsContent>
       </Tabs>
 
