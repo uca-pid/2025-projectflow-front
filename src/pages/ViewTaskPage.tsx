@@ -8,30 +8,9 @@ import { PublicTasksTable } from "@/components/PublicTasksTable";
 import { ConfirmCloneTaskModal } from "@/components/ConfirmCloneTaskModal";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
+import { flattenTasks } from "@/lib/task-utils";
 
-function flattenTasks(tasks: Partial<Task>[]): Task[] {
-  const map = new Map<string, Task>();
-
-  function traverse(list: Partial<Task>[]) {
-    for (const task of list) {
-      if (task.id) {
-        // if not already stored, add it
-        if (!map.has(task.id)) {
-          map.set(task.id, task as Task);
-        }
-      }
-
-      if (task.subTasks && task.subTasks.length > 0) {
-        traverse(task.subTasks);
-      }
-    }
-  }
-
-  traverse(tasks);
-  return Array.from(map.values());
-}
-
-export default function TasksPage() {
+export default function ViewTaskPage() {
   const { taskId } = useParams();
 
   const [task, setTask] = useState<Task>();
@@ -159,7 +138,7 @@ export default function TasksPage() {
         </div>
       )}
 
-      <PublicTasksTable task={task!} />
+      <PublicTasksTable tasks={flattenTasks([task!])} />
 
       <ConfirmCloneTaskModal
         open={isCloneModalOpen}

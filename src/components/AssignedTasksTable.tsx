@@ -16,18 +16,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Clock,
-  Check,
-  LoaderCircle,
-  Ban,
   MoreHorizontal,
   Flame,
   Pause,
   GitBranchPlus,
   ChevronRight,
   ChevronDown,
+  Check,
+  Ban,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  getStatusVariant,
+  getStatusTailwind,
+  getStatusIcon,
+  getStatusLabel,
+  formatDeadline,
+} from "@/lib/task-status-utils";
 
 type AssignedTasksTableProps = {
   tasks: Task[];
@@ -37,63 +42,6 @@ type AssignedTasksTableProps = {
   onCompleteTask?: (taskId: string) => void;
   onCreateSubTask?: (task: Task) => void;
 };
-
-function getStatusVariant(
-  status: string,
-): "secondary" | "outline" | "destructive" | "default" | undefined {
-  switch (status) {
-    case "DONE":
-      return "secondary";
-    case "IN_PROGRESS":
-      return "default";
-    case "CANCELLED":
-      return "destructive";
-    case "TODO":
-      return "outline";
-    default:
-      return undefined;
-  }
-}
-
-function getStatusTailwind(status: string): string {
-  switch (status) {
-    case "DONE":
-      return "bg-green-100 border border-green-400 text-green-800";
-    case "IN_PROGRESS":
-      return "bg-blue-100 border border-blue-400 text-blue-800";
-    case "CANCELLED":
-      return "bg-red-100 border border-red-400 text-red-800";
-    case "TODO":
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-    default:
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-  }
-}
-
-function formatDeadline(date: Date): string {
-  const now = new Date();
-  const deadline = new Date(date);
-  const diffMs = deadline.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  const formattedDate = deadline.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  if (diffDays < 0) {
-    return `${formattedDate} (Overdue)`;
-  } else if (diffDays === 0) {
-    return `${formattedDate} (Today)`;
-  } else if (diffDays === 1) {
-    return `${formattedDate} (Tomorrow)`;
-  } else {
-    return `${formattedDate} (${diffDays} days)`;
-  }
-}
 
 function TaskRow({
   task,
@@ -164,30 +112,13 @@ function TaskRow({
             className={getStatusTailwind(task.status)}
             variant={getStatusVariant(task.status)}
           >
-            {task.status === "TODO" && (
-              <>
-                <Clock className="w-3 h-3 mr-1" />
-                Pending
-              </>
-            )}
-            {task.status === "IN_PROGRESS" && (
-              <>
-                <LoaderCircle className="w-3 h-3 mr-1 animate-spin" />
-                In Progress
-              </>
-            )}
-            {task.status === "DONE" && (
-              <>
-                <Check className="w-3 h-3 mr-1" />
-                Completed
-              </>
-            )}
-            {task.status === "CANCELLED" && (
-              <>
-                <Ban className="w-4 h-4 mr-1" />
-                Cancelled
-              </>
-            )}
+            <>
+              {(() => {
+                const StatusIcon = getStatusIcon(task.status);
+                return <StatusIcon className="w-3 h-3 mr-1" />;
+              })()}
+              {getStatusLabel(task.status)}
+            </>
           </Badge>
         </TableCell>
 
