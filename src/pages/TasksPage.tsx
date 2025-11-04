@@ -1,9 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { MyTasksTable } from "@/components/MyTasksTable";
-import { AssignedTasksTable } from "@/components/AssignedTasksTable";
-import { MyTasksKanban } from "@/components/MyTasksKanban";
-import { AssignedTasksKanban } from "@/components/AssignedTasksKanban";
-import { PublicTasksKanban } from "@/components/PublicTasksKanban";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { CreateSubTaskModal } from "@/components/CreateSubTaskModal";
 import { EditTaskModal } from "@/components/EditTaskModal";
@@ -13,44 +8,32 @@ import { toast } from "sonner";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import { AssignTaskModal } from "@/components/AssignTaskModal";
 import LoadingPage from "./LoadingPage";
-import type { Task } from "@/types/task";
-import type { User } from "@/types/user";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PublicTasksTable } from "@/components/PublicTasksTable";
-import TreeGraph from "@/components/TreeGraph";
-import AssignedTreeGraph from "@/components/AssignedTreeGraph";
-import TrackedTreeGraph from "@/components/TrackedTreeGraph";
-import {
-  apiCall,
-  findTask,
-  flattenTasks,
-  updateTaskInTree,
-  addSubTaskToTree,
-  deleteTaskFromTree,
-  areAllSubtasksComplete,
-  cancelTaskAndSubtasks,
-  addUserToTaskField,
-  removeUserFromTaskField,
-} from "@/lib/task-utils";
+import { type Task } from "@/types/task";
+import { TasksTabs, type TaskType, type TasksState } from "@/components/TasksTabs";
+import { TasksViewSelector, type ViewType } from "@/components/TasksViewSelector";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus } from "lucide-react"; // Import Plus
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SelectGroup,
-  SelectLabel,
-} from "@/components/ui/select";
+import { Plus } from "lucide-react";
 
-type TaskType = "my" | "assigned" | "tracked";
+function flattenTasks(tasks: Partial<Task>[]): Task[] {
+  const map = new Map<string, Task>();
 
-type TasksState = {
-  my: Task[];
-  assigned: Task[];
-  tracked: Task[];
-};
+  function traverse(list: Partial<Task>[]) {
+    for (const task of list) {
+      if (task.id) {
+        if (!map.has(task.id)) {
+          map.set(task.id, task as Task);
+        }
+      }
+
+      if (task.subTasks && task.subTasks.length > 0) {
+        traverse(task.subTasks);
+      }
+    }
+  }
+
+  traverse(tasks);
+  return Array.from(map.values());
+}
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -64,9 +47,7 @@ export default function TasksPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
 
-  const [selectedView, setSelectedView] = useState<"tree" | "kanban" | "table">(
-    "table",
-  );
+  const [selectedView, setSelectedView] = useState<ViewType>("table");
   const [selectedType, setSelectedType] = useState<TaskType>("my");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -77,8 +58,10 @@ export default function TasksPage() {
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
+  // Get current tasks based on selected type
   const currentTasks = tasks[selectedType];
 
+  // Helper to update a specific task type
   const updateTaskType = useCallback(
     (type: TaskType, updater: (prev: Task[]) => Task[]) => {
       setTasks((prev) => ({
@@ -89,6 +72,7 @@ export default function TasksPage() {
     [],
   );
 
+
   const updateCurrentTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
       updateTaskType(selectedType, updater);
@@ -96,13 +80,29 @@ export default function TasksPage() {
     [selectedType, updateTaskType],
   );
 
+
   useEffect(() => {
     const fetchTasks = async () => {
       try {
+        const [myResponse, assignedResponse, trackedResponse] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/task/getTasks`, {
+            method: "GET",
+            credentials: "include",
+          }),
+          fetch(`${import.meta.env.VITE_API_URL}/task/getAssignedTasks`, {
+            method: "GET",
+            credentials: "include",
+          }),
+          fetch(`${import.meta.env.VITE_API_URL}/task/getTrackedTasks`, {
+            method: "GET",
+            credentials: "include",
+          }),
+        ]);
+
         const [myData, assignedData, trackedData] = await Promise.all([
-          apiCall<{ data: Task[] }>("/task/getTasks"),
-          apiCall<{ data: Task[] }>("/task/getAssignedTasks"),
-          apiCall<{ data: Task[] }>("/task/getTrackedTasks"),
+          myResponse.json(),
+          assignedResponse.json(),
+          trackedResponse.json(),
         ]);
 
         setTasks({
@@ -113,125 +113,214 @@ export default function TasksPage() {
       } catch (error) {
         console.error("Error fetching tasks:", error);
         setError(true);
-        setTasks({ my: [], assigned: [], tracked: [] });
+        setTasks({
+          my: [],
+          assigned: [],
+          tracked: [],
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    setSelectedView(
-      (localStorage.getItem("selectedView") as "tree" | "kanban") || "table",
-    );
-    setSelectedType(
-      (localStorage.getItem("selectedType") as "my" | "assigned" | "tracked") ||
-        "my",
-    );
     fetchTasks();
   }, []);
 
-  const handleTabChange = (tab: string) => {
-    localStorage.setItem("selectedType", tab);
-    setSelectedType(tab as TaskType);
+  const findTaskAcross = (taskId: string) => {
+    return (
+      tasks.my.find((task) => task.id === taskId) ||
+      tasks.assigned.find((task) => task.id === taskId) ||
+      tasks.tracked.find((task) => task.id === taskId)
+    );
   };
 
-  const handleViewChange = (view: string) => {
-    localStorage.setItem("selectedView", view);
-    setSelectedView(view as "tree" | "kanban" | "table");
+  const handleTabChange = (tab: TaskType) => {
+    setSelectedType(tab);
   };
 
-  const openEditTaskModal = (task: Task) => {
+  const handleEditTask = (task: Task) => {
     setSelectedTask(task);
     setShowEditModal(true);
   };
 
-  const openDeleteTaskModal = (task: Task) => {
+  const handleDeleteTask = (task: Task) => {
     setSelectedTask(task);
     setShowDeleteModal(true);
   };
 
-  const openCreateSubTaskModal = (task: Task) => {
-    setSelectedTask(task);
-    setShowCreateSubModal(true);
-  };
-
-  const openAssignTaskModalByTask = (task: Task) => {
-    setSelectedTask(task);
-    setShowAssignModal(true);
-  };
-
   const handleCreateTask = async (taskData: Task) => {
-    try {
-      const data = await apiCall<{ data: Task }>("/task/create", {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/task/create`,
+      {
         method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(taskData),
-      });
+      },
+    );
 
-      toast.success("Task created successfully");
-      updateCurrentTasks((prev) => [...prev, data.data]);
-      setShowCreateModal(false);
-    } catch (error) {
+    if (!response.ok) {
       toast.error("Failed to create task");
-      throw error;
+      throw new Error("Failed to create task");
     }
+
+    toast.success("Task created successfully");
+
+    const data = await response.json();
+    updateCurrentTasks((prev) => [...prev, data.data]);
+    setShowCreateModal(false);
   };
 
   const handleCreateSubTask = async (taskData: Task) => {
-    try {
-      const serverTask = await apiCall<{ data: Task }>(
-        `/task/${taskData?.parentTaskId}/create`,
-        {
-          method: "POST",
-          body: JSON.stringify(taskData),
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/task/${taskData?.parentTaskId}/create`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(taskData),
+      },
+    );
 
-      toast.success("Task created successfully");
-      updateCurrentTasks((prev) =>
-        addSubTaskToTree(prev, serverTask.data.parentTaskId!, serverTask.data),
-      );
-      setShowCreateSubModal(false);
-    } catch (error) {
+    if (!response.ok) {
       toast.error("Failed to create task");
-      throw error;
+      throw new Error("Failed to create task");
     }
+
+    toast.success("Task created successfully");
+
+    const serverTask = await response.json();
+
+    function addSubTask(
+      taskList: Partial<Task>[],
+      parentId: string,
+      newTask: Task,
+    ): Task[] {
+      return taskList.map((task) => {
+        if (task.id === parentId) {
+          return {
+            ...task,
+            subTasks: [...(task.subTasks || []), newTask],
+          };
+        }
+
+        if (task.subTasks && task.subTasks.length > 0) {
+          return {
+            ...task,
+            subTasks: addSubTask(task.subTasks, parentId, newTask),
+          };
+        }
+
+        return task;
+      }) as Task[];
+    }
+
+    updateCurrentTasks((prev) =>
+      addSubTask(prev, serverTask.data.parentTaskId, serverTask.data),
+    );
+
+    setShowCreateSubModal(false);
   };
 
   const handleUpdateTask = async (taskId: string, taskData: Partial<Task>) => {
-    try {
-      const data = await apiCall<{ data: Task }>(`/task/${taskId}`, {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/task/${taskId}`,
+      {
         method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(taskData),
-      });
+      },
+    );
 
-      toast.success("Task updated successfully");
-      updateCurrentTasks((prev) =>
-        updateTaskInTree(prev, data.data.id, data.data),
-      );
-      setShowEditModal(false);
-      setSelectedTask(null);
-    } catch (error) {
+    if (!response.ok) {
       toast.error("Failed to update task");
-      throw error;
+      throw new Error("Failed to update task");
     }
+
+    toast.success("Task updated successfully");
+    const data = await response.json();
+
+    function patchSubTask(
+      taskList: Partial<Task>[],
+      id: string,
+      updatedFields: Partial<Task>,
+    ): Task[] {
+      return taskList.map((task) => {
+        if (task.id === id) {
+          return {
+            ...task,
+            ...updatedFields,
+          };
+        }
+
+        if (task.subTasks && task.subTasks.length > 0) {
+          return {
+            ...task,
+            subTasks: patchSubTask(task.subTasks, id, updatedFields),
+          };
+        }
+
+        return task;
+      }) as Task[];
+    }
+
+    updateCurrentTasks((prev) => patchSubTask(prev, data.data.id, data.data));
+
+    setShowEditModal(false);
+    setSelectedTask(null);
   };
 
   const handleConfirmDelete = async (taskId: string) => {
-    try {
-      await apiCall(`/task/${taskId}`, { method: "DELETE" });
-      toast.success("Deleted task successfully");
-
-      updateCurrentTasks((prev) => deleteTaskFromTree(prev, taskId));
-
-      if (selectedType !== "my") {
-        updateTaskType("my", (prev) => deleteTaskFromTree(prev, taskId));
-      }
-
-      setShowDeleteModal(false);
-      setSelectedTask(null);
-    } catch (error) {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/task/${taskId}`,
+      {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    if (!response.ok) {
       toast.error("Failed to delete task");
-      throw error;
+      throw new Error("Failed to delete task");
     }
+    toast.success("Deleted task successfully");
+
+    function deleteTaskRecursively(
+      taskList: Partial<Task>[],
+      taskIdToDelete: string,
+    ): Task[] {
+      return taskList
+        .filter((task) => task.id !== taskIdToDelete)
+        .map((task) => {
+          if (task.subTasks && task.subTasks.length > 0) {
+            return {
+              ...task,
+              subTasks: deleteTaskRecursively(task.subTasks, taskIdToDelete),
+            };
+          }
+          return task;
+        }) as Task[];
+    }
+
+    // Delete from current view
+    updateCurrentTasks((prev) => deleteTaskRecursively(prev, taskId));
+
+    // Also delete from "my" if it's not already the current view
+    if (selectedType !== "my") {
+      updateTaskType("my", (prev) => deleteTaskRecursively(prev, taskId));
+    }
+
+    setShowDeleteModal(false);
+    setSelectedTask(null);
   };
 
   const handleStartTask = async (taskId: string) => {
@@ -243,133 +332,52 @@ export default function TasksPage() {
   };
 
   const handleCompleteTask = async (taskId: string) => {
-    const currentTask = findTask(currentTasks, taskId);
-    if (!currentTask) {
-      console.error(`Task with ID ${taskId} not found`);
-      return;
-    }
-
-    if (!areAllSubtasksComplete(currentTask)) {
-      toast.error("All subtasks must be completed first.");
-      return;
-    }
-
     await handleUpdateTask(taskId, { status: "DONE" });
   };
 
   const handleCancelTask = async (taskId: string) => {
-    const currentTask = findTask(currentTasks, taskId);
-    if (!currentTask) {
-      console.error(`Task with ID ${taskId} not found`);
-      return;
-    }
-
-    await cancelTaskAndSubtasks(currentTask, handleUpdateTask);
     await handleUpdateTask(taskId, { status: "CANCELLED" });
   };
 
-  const handleAcceptViewer = async (task: Task, userId: string) => {
-    try {
-      await apiCall(`/task/${task?.id}/allow/${userId}`, { method: "POST" });
+  const handleAssignTask = (taskId: string) => {
+    setShowAssignModal(true);
+    function findTask(taskList: Partial<Task>[], id: string): Task | null {
+      for (const task of taskList) {
+        if (task.id === id) {
+          return task as Task;
+        }
 
-      const real_user = task.appliedUsers.find((user) => user.id === userId);
-
-      if (!real_user) {
-        toast.error("User not found");
-        return;
+        if (task.subTasks && task.subTasks.length > 0) {
+          const found = findTask(task.subTasks, id);
+          if (found) return found;
+        }
       }
 
-      updateCurrentTasks((prev) => {
-        const updatedTasks = removeUserFromTaskField(
-          addUserToTaskField(
-            prev,
-            task.id,
-            userId,
-            "trackedUsers",
-            real_user as User,
-          ),
-          task.id,
-          userId,
-          "appliedUsers",
-        );
+      return null;
+    }
+    setSelectedTask(findTask(currentTasks, taskId)!);
+  };
 
-        return updatedTasks;
-      });
+  const handleOpenSubTask = (task: Task) => {
+    setShowCreateSubModal(true);
+    setSelectedTask(task);
+  };
 
-      setSelectedTask((prev) => {
-        if (!prev) {
-          return null;
-        }
-        return {
-          ...prev,
-          appliedUsers: prev.appliedUsers.filter((user) => user.id !== userId),
-          trackedUsers: [...prev.trackedUsers, real_user],
-        };
-      });
+  const handleViewChange = (value: ViewType) => {
+    setSelectedView(value);
+  };
 
-      toast.success("Task assigned successfully");
-    } catch (error) {
-      toast.error("Failed to assign task");
-      throw error;
+  // Wrapper functions for Kanban components
+  const handleDeleteTaskById = (taskId: string) => {
+    const task = findTaskAcross(taskId);
+    if (task) {
+      handleDeleteTask(task);
     }
   };
 
-  const handleUnassign = async (task: Task, userId: string) => {
-    try {
-      await apiCall(`/task/${task?.id}/unassign/${userId}`, { method: "POST" });
-
-      updateCurrentTasks((prev) => {
-        return removeUserFromTaskField(
-          removeUserFromTaskField(prev, task.id, userId, "assignedUsers"),
-          task.id,
-          userId,
-          "trackedUsers",
-        );
-      });
-
-      setSelectedTask((prev) => {
-        if (!prev) {
-          return null;
-        }
-        return {
-          ...prev,
-          trackedUsers: prev.trackedUsers.filter((user) => user.id !== userId),
-          assignedUsers: prev.assignedUsers.filter(
-            (user) => user.id !== userId,
-          ),
-        };
-      });
-
-      toast.success("Task unassigned successfully");
-    } catch (error) {
-      toast.error("Failed to unassign task");
-      throw error;
-    }
-  };
-
-  const handleDecline = async (task: Task, userId: string) => {
-    try {
-      await apiCall(`/task/${task?.id}/reject/${userId}`, { method: "POST" });
-
-      updateCurrentTasks((prev) => {
-        return removeUserFromTaskField(prev, task.id, userId, "appliedUsers");
-      });
-
-      setSelectedTask((prev) => {
-        if (!prev) {
-          return null;
-        }
-        return {
-          ...prev,
-          appliedUsers: prev.appliedUsers.filter((user) => user.id !== userId),
-        };
-      });
-
-      toast.success("Application declined successfully");
-    } catch (error) {
-      toast.error("Failed to decline task");
-      throw error;
-    }
+  const handleAssignTaskByTask = (task: Task) => {
+    setSelectedTask(task);
+    setShowAssignModal(true);
   };
 
   if (loading) {
@@ -386,8 +394,8 @@ export default function TasksPage() {
           <div className="text-gray-600 mb-4">
             Unable to connect to the database.
           </div>
-          <Button
-            onClick={() => window.location.reload()}
+          <Button 
+            onClick={() => window.location.reload()} 
             className="bg-blue-500 hover:bg-blue-600"
           >
             Retry
@@ -411,19 +419,10 @@ export default function TasksPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Select value={selectedView} onValueChange={handleViewChange}>
-              <SelectTrigger className="w-[140px] bg-white shadow">
-                <SelectValue placeholder="Select a view" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                <SelectGroup>
-                  <SelectLabel>Views</SelectLabel>
-                  <SelectItem value="table">Table View</SelectItem>
-                  <SelectItem value="kanban">Kanban View</SelectItem>
-                  <SelectItem value="tree">Tree View</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <TasksViewSelector 
+              selectedView={selectedView} 
+              onViewChange={handleViewChange} 
+            />
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4" />
               Task
@@ -472,93 +471,24 @@ export default function TasksPage() {
         </div>
       </div>
 
-      <Tabs value={selectedType} onValueChange={handleTabChange}>
-        <TabsList>
-          <TabsTrigger value="my">My Tasks</TabsTrigger>
-          <TabsTrigger value="assigned">Assigned Tasks</TabsTrigger>
-          <TabsTrigger value="tracked">Tracked Tasks</TabsTrigger>
-        </TabsList>
-        {/* Tasks Table */}
-        <TabsContent value="my">
-          {selectedView === "tree" && (
-            <TreeGraph
-              tasks={tasks.my}
-              selectedTask={selectedTask}
-              setSelectedTask={setSelectedTask}
-              openEditModal={openEditTaskModal}
-              openAddSubtask={openCreateSubTaskModal}
-              openDeleteTask={openDeleteTaskModal}
-              openAssignTask={openAssignTaskModalByTask}
-            />
-          )}
-          {selectedView === "kanban" && (
-            <MyTasksKanban
-              tasks={flattenTasks(tasks.my)}
-              onEditTask={openEditTaskModal}
-              onDeleteTask={openDeleteTaskModal}
-              onAssignTask={openAssignTaskModalByTask}
-              onCreateSubTask={openCreateSubTaskModal}
-              onPause={handlePauseTask}
-              onStart={handleStartTask}
-              onComplete={handleCompleteTask}
-              onCancel={handleCancelTask}
-            />
-          )}
-          {selectedView === "table" && (
-            <MyTasksTable
-              tasks={tasks.my}
-              onEditTask={openEditTaskModal}
-              onDeleteTask={openDeleteTaskModal}
-              onAssignTask={openAssignTaskModalByTask}
-              onCreateSubTask={openCreateSubTaskModal}
-            />
-          )}
-        </TabsContent>
-        <TabsContent value="assigned">
-          {selectedView === "kanban" && (
-            <AssignedTasksKanban
-              tasks={flattenTasks(tasks.assigned)}
-              onPause={handlePauseTask}
-              onStart={handleStartTask}
-              onComplete={handleCompleteTask}
-              onCancel={handleCancelTask}
-            />
-          )}
-          {selectedView === "tree" && (
-            <AssignedTreeGraph
-              tasks={tasks.assigned}
-              selectedTask={selectedTask}
-              setSelectedTask={setSelectedTask}
-              openAddSubtask={openCreateSubTaskModal}
-              onCompleteTask={handleCompleteTask}
-              onCancelTask={handleCancelTask}
-              onStartTask={handleStartTask}
-              onPauseTask={handlePauseTask}
-            />
-          )}
-          {selectedView === "table" && (
-            <AssignedTasksTable
-              tasks={tasks.assigned}
-              onStartTask={handleStartTask}
-              onPauseTask={handlePauseTask}
-              onCompleteTask={handleCompleteTask}
-              onCancelTask={handleCancelTask}
-              onCreateSubTask={openCreateSubTaskModal}
-            />
-          )}
-        </TabsContent>
-        <TabsContent value="tracked">
-          {selectedView === "kanban" && (
-            <PublicTasksKanban tasks={flattenTasks(tasks.tracked)} />
-          )}
-          {selectedView === "tree" && (
-            <TrackedTreeGraph tasks={tasks.tracked} />
-          )}
-          {selectedView === "table" && (
-            <PublicTasksTable tasks={tasks.tracked} />
-          )}
-        </TabsContent>
-      </Tabs>
+      <TasksTabs
+        selectedType={selectedType}
+        selectedView={selectedView}
+        tasks={tasks}
+        selectedTask={selectedTask}
+        onTabChange={handleTabChange}
+        onEditTask={handleEditTask}
+        onDeleteTask={handleDeleteTask}
+        onDeleteTaskById={handleDeleteTaskById}
+        onAssignTask={handleAssignTask}
+        onAssignTaskByTask={handleAssignTaskByTask}
+        onCreateSubTask={handleOpenSubTask}
+        onCompleteTask={handleCompleteTask}
+        onStartTask={handleStartTask}
+        onPauseTask={handlePauseTask}
+        onCancelTask={handleCancelTask}
+        setSelectedTask={setSelectedTask}
+      />
 
       {/* Modals */}
       <CreateTaskModal
@@ -601,9 +531,6 @@ export default function TasksPage() {
           setSelectedTask(null);
         }}
         task={selectedTask!}
-        onAccept={handleAcceptViewer}
-        onDecline={handleDecline}
-        onUnassign={handleUnassign}
       />
     </BasicPageLayout>
   );
