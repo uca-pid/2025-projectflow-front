@@ -8,14 +8,17 @@ import {
   SelectLabel,
 } from "@/components/ui/select";
 
-export type ViewType = "tree" | "kanban" | "table";
+import { type ViewType } from "@/types/task";
 
 interface TasksViewSelectorProps {
   selectedView: ViewType;
   onViewChange: (value: ViewType) => void;
 }
 
-export function TasksViewSelector({ selectedView, onViewChange }: TasksViewSelectorProps) {
+export function TasksViewSelector({
+  selectedView,
+  onViewChange,
+}: TasksViewSelectorProps) {
   const handleValueChange = (value: string) => {
     onViewChange(value as ViewType);
   };
@@ -36,3 +39,4 @@ export function TasksViewSelector({ selectedView, onViewChange }: TasksViewSelec
     </Select>
   );
 }
+

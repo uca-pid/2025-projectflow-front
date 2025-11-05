@@ -24,7 +24,9 @@ export function CreateTaskModal({
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    deadline: "",
+    deadline: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 16),
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -69,7 +71,13 @@ export function CreateTaskModal({
   };
 
   const handleClose = () => {
-    setFormData({ title: "", description: "", deadline: "" });
+    setFormData({
+      title: "",
+      description: "",
+      deadline: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 16),
+    });
     setErrors({});
     onClose();
   };
