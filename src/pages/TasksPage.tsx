@@ -4,6 +4,7 @@ import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { CreateSubTaskModal } from "@/components/CreateSubTaskModal";
 import { EditTaskModal } from "@/components/EditTaskModal";
 import { DeleteTaskModal } from "@/components/DeleteTaskModal";
+import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { Button } from "@/components/ui/button";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import { AssignTaskModal } from "@/components/AssignTaskModal";
@@ -60,6 +61,7 @@ export default function TasksPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -245,6 +247,7 @@ export default function TasksPage() {
               openDeleteModal={setShowDeleteModal}
               openAssignModal={setShowAssignModal}
               openSubtaskModal={setShowCreateSubModal}
+              openDetailsModal={setShowDetailsModal}
             />
           )}
 
@@ -256,6 +259,7 @@ export default function TasksPage() {
               openDeleteModal={setShowDeleteModal}
               openAssignModal={setShowAssignModal}
               openSubtaskModal={setShowCreateSubModal}
+              openDetailsModal={setShowDetailsModal}
               updateTask={updateTask}
             />
           )}
@@ -268,6 +272,7 @@ export default function TasksPage() {
               openAddSubtask={() => setShowCreateSubModal(true)}
               openDeleteTask={() => setShowDeleteModal(true)}
               openAssignTask={() => setShowAssignModal(true)}
+              openDetailsModal={() => setShowDetailsModal(true)}
             />
           )}
         </TabsContent>
@@ -278,6 +283,7 @@ export default function TasksPage() {
               tasks={tasks.assigned}
               setSelectedTask={setSelectedTask}
               openCreateSubTask={setShowCreateSubModal}
+              openDetailsModal={setShowDetailsModal}
               updateTask={updateTask}
             />
           )}
@@ -296,6 +302,7 @@ export default function TasksPage() {
               selectedTask={selectedTask}
               setSelectedTask={setSelectedTask}
               openAddSubtask={() => setShowCreateSubModal(true)}
+              openDetailsModal={() => setShowDetailsModal(true)}
               updateTask={updateTask}
             />
           )}
@@ -314,7 +321,6 @@ export default function TasksPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Modals */}
       <CreateTaskModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -357,6 +363,14 @@ export default function TasksPage() {
         task={selectedTask!}
         onAllow={allowViewer}
         onUnassign={unassignUser}
+      />
+      <TaskDetailModal
+        open={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedTask(null);
+        }}
+        task={selectedTask}
       />
     </BasicPageLayout>
   );

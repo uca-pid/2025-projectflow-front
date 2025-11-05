@@ -22,6 +22,7 @@ import {
   GitBranchPlus,
   ChevronRight,
   ChevronDown,
+  Eye,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -40,6 +41,7 @@ type MyTasksTableProps = {
   openDeleteModal?: (open: boolean) => void;
   openAssignModal?: (open: boolean) => void;
   openSubtaskModal?: (open: boolean) => void;
+  openDetailsModal?: (open: boolean) => void;
 };
 
 function TaskRow({
@@ -51,6 +53,7 @@ function TaskRow({
   onDeleteTask,
   onAssignTask,
   onCreateSubTask,
+  onViewDetails,
 }: {
   task: Task;
   level?: number;
@@ -60,6 +63,7 @@ function TaskRow({
   onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
+  onViewDetails?: (task: Task) => void;
 }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
   const isExpanded = expandedTasks.has(task.id);
@@ -131,6 +135,10 @@ function TaskRow({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => onViewDetails!(task)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Details
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onCreateSubTask!(task)}>
                 <GitBranchPlus className="mr-2 h-4 w-4" />
                 Add Subtask
@@ -168,6 +176,7 @@ function TaskRow({
             onDeleteTask={onDeleteTask}
             onAssignTask={onAssignTask}
             onCreateSubTask={onCreateSubTask}
+            onViewDetails={onViewDetails}
           />
         ))}
     </>
@@ -181,6 +190,7 @@ export function MyTasksTable({
   openAssignModal,
   openSubtaskModal,
   openDeleteModal,
+  openDetailsModal,
 }: MyTasksTableProps) {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
@@ -225,6 +235,11 @@ export function MyTasksTable({
     openSubtaskModal?.(true);
   }
 
+  function onViewDetails(task: Task) {
+    setSelectedTask(task);
+    openDetailsModal?.(true);
+  }
+
   return (
     <div className="rounded-md border shadow bg-white">
       <Table>
@@ -260,6 +275,7 @@ export function MyTasksTable({
                 onDeleteTask={onDeleteTask}
                 onAssignTask={onAssignTask}
                 onCreateSubTask={onCreateSubTask}
+                onViewDetails={onViewDetails}
               />
             ))}
         </TableBody>

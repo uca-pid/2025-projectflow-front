@@ -15,6 +15,7 @@ import {
   Trash2,
   GitBranchPlus,
   UserPlus,
+  Eye,
 } from "lucide-react";
 
 interface TreeNode {
@@ -35,6 +36,7 @@ interface TreeGraphProps {
   openAddSubtask: (task: Task) => void;
   openDeleteTask: (task: Task) => void;
   openAssignTask: (task: Task) => void;
+  openDetailsModal?: (task: Task) => void;
 }
 
 const statusColors = {
@@ -64,6 +66,7 @@ export default function TreeGraph({
   openAddSubtask,
   openDeleteTask,
   openAssignTask,
+  openDetailsModal,
 }: TreeGraphProps) {
   const [localTasks, setLocalTasks] = useState<Task[] | null>();
   const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
@@ -159,7 +162,7 @@ export default function TreeGraph({
   };
 
   useEffect(() => {
-    const nodes = calculateLayout(localTasks);
+    const nodes = calculateLayout(localTasks || null);
     setTreeNodes(nodes);
   }, [localTasks]);
 
@@ -260,16 +263,16 @@ export default function TreeGraph({
               >
                 <Pencil className="h-4 w-4" />
               </Button>
-
-              <Button
-                variant="outline"
-                className="text-red-500"
-                size="sm"
-                title="Delete Task"
-                onClick={() => openDeleteTask(selectedTask)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {openDetailsModal && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  title="View Details"
+                  onClick={() => openDetailsModal(selectedTask)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             <div className="flex-row space-x-2">
               <Button
@@ -288,6 +291,17 @@ export default function TreeGraph({
                 onClick={() => openAssignTask(selectedTask)}
               >
                 <UserPlus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex space-x-2 justify-end">
+              <Button
+                variant="outline"
+                className="text-red-500"
+                size="sm"
+                title="Delete Task"
+                onClick={() => openDeleteTask(selectedTask)}
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </>

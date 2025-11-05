@@ -33,6 +33,7 @@ import {
   Trash2,
   UserPlus,
   GitBranchPlus,
+  Eye,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -46,6 +47,7 @@ type MyTasksKanbanProps = {
   openDeleteModal?: (open: boolean) => void;
   openAssignModal?: (open: boolean) => void;
   openSubtaskModal?: (open: boolean) => void;
+  openDetailsModal?: (open: boolean) => void;
   updateTask?: (task: Task) => void;
 };
 
@@ -55,6 +57,7 @@ function TaskCard({
   onDeleteTask,
   onAssignTask,
   onCreateSubTask,
+  onViewDetails,
   isDragging = false,
 }: {
   task: Task;
@@ -62,6 +65,7 @@ function TaskCard({
   onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
+  onViewDetails?: (task: Task) => void;
   isDragging?: boolean;
 }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
@@ -104,6 +108,12 @@ function TaskCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {onViewDetails && (
+                <DropdownMenuItem onClick={() => onViewDetails(task)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Details
+                </DropdownMenuItem>
+              )}
               {onEditTask && (
                 <DropdownMenuItem onClick={() => onEditTask(task)}>
                   <Edit className="mr-2 h-4 w-4" />
@@ -169,6 +179,7 @@ function KanbanColumn({
   onDeleteTask,
   onAssignTask,
   onCreateSubTask,
+  onViewDetails,
   activeTaskId,
 }: {
   title: string;
@@ -178,6 +189,7 @@ function KanbanColumn({
   onDeleteTask?: (taskId: Task) => void;
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
+  onViewDetails?: (task: Task) => void;
   activeTaskId?: string | null;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -211,6 +223,7 @@ function KanbanColumn({
             onDeleteTask={onDeleteTask}
             onAssignTask={onAssignTask}
             onCreateSubTask={onCreateSubTask}
+            onViewDetails={onViewDetails}
             isDragging={task.id === activeTaskId}
           />
         ))}
@@ -231,6 +244,7 @@ export function MyTasksKanban({
   openDeleteModal,
   openAssignModal,
   openSubtaskModal,
+  openDetailsModal,
   updateTask,
 }: MyTasksKanbanProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -297,6 +311,11 @@ export function MyTasksKanban({
     setSelectedTask?.(task);
   }
 
+  function handleOpenDetails(task: Task) {
+    openDetailsModal?.(true);
+    setSelectedTask?.(task);
+  }
+
   if (tasks.length === 0) {
     return (
       <div className="text-center py-12">
@@ -324,6 +343,7 @@ export function MyTasksKanban({
           onDeleteTask={handleOpenDelete}
           onAssignTask={handleOpenAssign}
           onCreateSubTask={handleOpenSubtask}
+          onViewDetails={handleOpenDetails}
           activeTaskId={activeTask?.id}
         />
         <KanbanColumn
@@ -334,6 +354,7 @@ export function MyTasksKanban({
           onDeleteTask={handleOpenDelete}
           onAssignTask={handleOpenAssign}
           onCreateSubTask={handleOpenSubtask}
+          onViewDetails={handleOpenDetails}
           activeTaskId={activeTask?.id}
         />
         <KanbanColumn
@@ -344,6 +365,7 @@ export function MyTasksKanban({
           onDeleteTask={handleOpenDelete}
           onAssignTask={handleOpenAssign}
           onCreateSubTask={handleOpenSubtask}
+          onViewDetails={handleOpenDetails}
           activeTaskId={activeTask?.id}
         />
         <KanbanColumn
@@ -354,6 +376,7 @@ export function MyTasksKanban({
           onDeleteTask={handleOpenDelete}
           onAssignTask={handleOpenAssign}
           onCreateSubTask={handleOpenSubtask}
+          onViewDetails={handleOpenDetails}
           activeTaskId={activeTask?.id}
         />
       </div>

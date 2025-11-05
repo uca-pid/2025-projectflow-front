@@ -1,5 +1,16 @@
 import type { User } from "./user";
 
+export interface Note {
+  id: string;
+  text: string;
+  isPositive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  user: Partial<User>;
+  taskId: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -20,6 +31,7 @@ export interface Task {
   parentTaskId: string | null;
   parentTask: Partial<Task> | null;
   subTasks: Partial<Task>[];
+  notes?: Note[];
 }
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";

@@ -16,6 +16,7 @@ import {
   Check,
   Ban,
   Pause,
+  Eye,
 } from "lucide-react";
 
 interface TreeNode {
@@ -33,6 +34,7 @@ interface TreeGraphProps {
   selectedTask: Task | null;
   setSelectedTask: (task: Task | null) => void;
   openAddSubtask: (task: Task) => void;
+  openDetailsModal?: (open: boolean) => void;
   updateTask?: (task: Task) => Promise<void>;
 }
 
@@ -60,6 +62,7 @@ export default function AssignedTreeGraph({
   selectedTask,
   setSelectedTask,
   openAddSubtask,
+  openDetailsModal,
   updateTask,
 }: TreeGraphProps) {
   const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
@@ -317,6 +320,16 @@ export default function AssignedTreeGraph({
                 >
                   <GitBranchPlus className="h-4 w-4" />
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  title="View Details"
+                  onClick={() => openDetailsModal!(true)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex justify-end space-x-2">
                 <Button
                   variant="outline"
                   size="sm"
