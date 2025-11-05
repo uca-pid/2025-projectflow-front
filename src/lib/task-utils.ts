@@ -1,26 +1,4 @@
 import type { Task } from "@/types/task";
-import type { User } from "@/types/user";
-
-// API utility
-export async function apiCall<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    throw new Error(`API call failed: ${endpoint}`);
-  }
-
-  return response.json();
-}
 
 // Tree traversal utilities
 export function findTask(taskList: Partial<Task>[], id: string): Task | null {
@@ -39,8 +17,8 @@ export function flattenTasks(tasks: Partial<Task>[]): Task[] {
 
   function traverse(list: Partial<Task>[]) {
     for (const task of list) {
-      if (task.id) map.set(task.id, task as Task);
-      if (task.subTasks?.length) traverse(task.subTasks);
+      if (task?.id) map.set(task.id, task as Task);
+      if (task?.subTasks?.length) traverse(task?.subTasks);
     }
   }
 
@@ -108,14 +86,14 @@ export function deleteTaskFromTree(
 }
 
 // Task validation utilities
-export function areAllSubtasksComplete(task: Task): boolean {
+export function areAllSubtasksTerminal(task: Task): boolean {
   if (!task.subTasks || task.subTasks.length === 0) return true;
 
   for (const subtask of task.subTasks) {
     const sub = subtask as Task;
     if (
       (sub.status !== "DONE" && sub.status !== "CANCELLED") ||
-      !areAllSubtasksComplete(sub)
+      !areAllSubtasksTerminal(sub)
     ) {
       return false;
     }
@@ -125,71 +103,45 @@ export function areAllSubtasksComplete(task: Task): boolean {
 }
 
 // Recursive status update for cancellation
-export async function cancelTaskAndSubtasks(
+export async function cancelSubtasks(
   task: Task,
-  updateFn: (id: string, data: Partial<Task>) => Promise<void>,
-): Promise<void> {
-  for (const subtask of task.subTasks) {
-    const sub = subtask as Task;
-    if (sub.status !== "CANCELLED") {
-      await cancelTaskAndSubtasks(sub, updateFn);
-      await updateFn(sub.id, { status: "CANCELLED" });
+  updateTask?: (task: Task) => Promise<void>,
+  cancel: boolean = true,
+): Promise<Task> {
+  for (const subtask of task.subTasks || []) {
+    subtask.status = cancel ? "CANCELLED" : "TODO";
+    await updateTask?.(subtask as Task);
+    await cancelSubtasks(subtask as Task, updateTask, cancel);
+  }
+  return task;
+}
+
+// I am not a mere validation checker, I AM THE VALIDATOR, you will become valid BY FORCE
+export async function validateTaskUpdate(
+  newTask: Task,
+  oldTask: Task,
+  updateTask: (task: Task) => Promise<void>,
+): Promise<{ valid: boolean; message: string }> {
+  if (newTask.status === "DONE" && oldTask.status !== "DONE") {
+    if (!areAllSubtasksTerminal(newTask)) {
+      return {
+        valid: false,
+        message:
+          "All subtasks must be terminal before marking the task as done.",
+      };
     }
   }
-}
+  if (newTask.status === "CANCELLED" && oldTask.status !== "CANCELLED") {
+    if (!areAllSubtasksTerminal(newTask)) {
+      await cancelSubtasks(newTask, updateTask);
+      return { valid: true, message: "Task update has been validated" };
+    }
+  }
 
-// Reactive utility functions for user management
-export function addUserToTaskField(
-  taskList: Partial<Task>[],
-  taskId: string,
-  userId: string,
-  field: "trackedUsers" | "assignedUsers",
-  user: User,
-): Task[] {
-  return taskList.map((task) => {
-    if (task.id === taskId) {
-      const currentUsers = (task[field] || []) as User[];
-      return {
-        ...task,
-        [field]: [...currentUsers, user],
-      };
-    }
-    if (task.subTasks?.length) {
-      return {
-        ...task,
-        subTasks: addUserToTaskField(
-          task.subTasks,
-          taskId,
-          userId,
-          field,
-          user,
-        ),
-      };
-    }
-    return task;
-  }) as Task[];
-}
+  if (newTask.status !== "CANCELLED" && oldTask.status === "CANCELLED") {
+    await cancelSubtasks(newTask, updateTask, false);
+    return { valid: true, message: "Task update has been validated" };
+  }
 
-export function removeUserFromTaskField(
-  taskList: Partial<Task>[],
-  taskId: string,
-  userId: string,
-  field: "trackedUsers" | "assignedUsers" | "appliedUsers",
-): Task[] {
-  return taskList.map((task) => {
-    if (task.id === taskId) {
-      const currentUsers = (task[field] || []) as User[];
-      return {
-        ...task,
-        [field]: currentUsers.filter((user: User) => user.id !== userId),
-      };
-    }
-    if (task.subTasks?.length) {
-      return {
-        ...task,
-        subTasks: removeUserFromTaskField(task.subTasks, taskId, userId, field),
-      };
-    }
-    return task;
-  }) as Task[];
+  return { valid: true, message: "Task update is valid" };
 }

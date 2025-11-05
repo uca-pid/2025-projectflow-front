@@ -33,10 +33,7 @@ interface TreeGraphProps {
   selectedTask: Task | null;
   setSelectedTask: (task: Task | null) => void;
   openAddSubtask: (task: Task) => void;
-  onStartTask: (taskId: string) => void;
-  onPauseTask: (taskId: string) => void;
-  onCompleteTask: (taskId: string) => void;
-  onCancelTask: (taskId: string) => void;
+  updateTask?: (task: Task) => Promise<void>;
 }
 
 const statusColors = {
@@ -63,10 +60,7 @@ export default function AssignedTreeGraph({
   selectedTask,
   setSelectedTask,
   openAddSubtask,
-  onStartTask,
-  onPauseTask,
-  onCompleteTask,
-  onCancelTask,
+  updateTask,
 }: TreeGraphProps) {
   const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
   const [zoom, setZoom] = useState(1);
@@ -86,11 +80,6 @@ export default function AssignedTreeGraph({
       setSelectedTask(task);
     }
   };
-
-  // Deselect tasks whenever project changes
-  useEffect(() => {
-    setSelectedTask(null);
-  }, [tasks, setSelectedTask]);
 
   // Calculate tree layout
   const calculateLayout = (tasks: Task[] | null): TreeNode[] => {
@@ -239,6 +228,26 @@ export default function AssignedTreeGraph({
     setIsDragging(false);
   };
 
+  async function onStartTask(task: Task) {
+    const updatedTask = { ...task, status: "IN_PROGRESS" };
+    await updateTask?.(updatedTask);
+  }
+
+  async function onCancelTask(task: Task) {
+    const updatedTask = { ...task, status: "CANCELLED" };
+    await updateTask?.(updatedTask);
+  }
+
+  async function onCompleteTask(task: Task) {
+    const updatedTask = { ...task, status: "DONE" };
+    await updateTask?.(updatedTask);
+  }
+
+  async function onPauseTask(task: Task) {
+    const updatedTask = { ...task, status: "TODO" };
+    await updateTask?.(updatedTask);
+  }
+
   const handleZoomIn = () => setZoom(Math.min(zoom * 1.2, 3));
   const handleZoomOut = () => setZoom(Math.max(zoom / 1.2, 0.3));
 
@@ -274,7 +283,7 @@ export default function AssignedTreeGraph({
                     variant="outline"
                     size="sm"
                     title="Start Working"
-                    onClick={() => onStartTask(selectedTask?.id)}
+                    onClick={() => onStartTask(selectedTask)}
                   >
                     <Flame className="h-4 w-4" />
                   </Button>
@@ -284,7 +293,7 @@ export default function AssignedTreeGraph({
                     variant="outline"
                     size="sm"
                     title="Halt Task"
-                    onClick={() => onPauseTask(selectedTask?.id)}
+                    onClick={() => onPauseTask(selectedTask)}
                   >
                     <Pause className="h-4 w-4" />
                   </Button>
@@ -294,7 +303,7 @@ export default function AssignedTreeGraph({
                   variant="outline"
                   size="sm"
                   title="Complete Task"
-                  onClick={() => onCompleteTask(selectedTask?.id)}
+                  onClick={() => onCompleteTask(selectedTask)}
                 >
                   <Check className="h-4 w-4" />
                 </Button>
@@ -313,7 +322,8 @@ export default function AssignedTreeGraph({
                   size="sm"
                   className="text-red-600"
                   title="Cancel Task"
-                  onClick={() => onCancelTask(selectedTask?.id)}
+                  onClick={() => onCancelTask(selectedTask)}
+                  confirm={true}
                 >
                   <Ban className="h-4 w-4" />
                 </Button>
@@ -406,14 +416,6 @@ export default function AssignedTreeGraph({
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <StatusIcon className="h-4 w-4 flex-shrink-0" />
-                          {/*
-                          <Badge
-                            variant="secondary"
-                            className={`text-xs ${priorityColors[node.task.priority]}`}
-                          >
-                            {node.task.priority}
-                          </Badge>
-                          */}
                         </div>
                         <Button
                           variant="ghost"

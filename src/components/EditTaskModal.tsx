@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 interface EditTaskModalProps {
   open: boolean;
   onClose: () => void;
-  onUpdateTask: (taskId: string, taskData: Task) => void;
+  onUpdateTask: (task: Task) => void;
   task: Task | null;
 }
 
@@ -77,14 +77,16 @@ export function EditTaskModal({
 
     if (validateForm() && task) {
       const taskData: Partial<Task> = {
+        id: task.id,
         title: formData.title.trim(),
         description: formData.description.trim(),
         deadline: formData.deadline,
         status: formData.status,
         isPublic: formData.isPublic,
+        subTasks: task.subTasks,
       };
 
-      onUpdateTask(task.id, taskData as Task);
+      onUpdateTask(taskData as Task);
       handleClose();
     }
   };
@@ -101,7 +103,7 @@ export function EditTaskModal({
     onClose();
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -217,8 +219,9 @@ export function EditTaskModal({
             <div className="flex flex-row items-center gap-1">
               <Checkbox
                 id="edit-public"
+                checked={formData.isPublic}
                 onCheckedChange={(checked) =>
-                  handleInputChange("isPublic", checked.toString())
+                  handleInputChange("isPublic", checked)
                 }
               />
               <p className="text-sm">Make this task public</p>

@@ -18,19 +18,14 @@ import {
 } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useState, useEffect } from "react";
-import {
-  getStatusTailwind,
-  formatDeadline,
-} from "@/lib/task-status-utils";
+import { getStatusTailwind, formatDeadline } from "@/lib/task-status-utils";
 
 type AssignedTasksKanbanProps = {
   tasks: Task[];
-  onDeleteTask?: (taskId: string) => void;
-  onAssignTask?: (task: Task) => void;
-  onComplete?: (taskId: string) => void;
-  onStart?: (taskId: string) => void;
-  onPause?: (taskId: string) => void;
-  onCancel?: (taskId: string) => void;
+  setSelectedTask: (task: Task | null) => void;
+  openDeleteModal?: (open: boolean) => void;
+  openAssignModal?: (open: boolean) => void;
+  updateTask?: (task: Task) => Promise<void>;
 };
 
 function isBlockedTask(task: Task): boolean {
@@ -42,7 +37,7 @@ function TaskCard({
   isDragging = false,
 }: {
   task: Task;
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   isDragging?: boolean;
 }) {
@@ -127,7 +122,7 @@ function KanbanColumn({
   title: string;
   status: string;
   tasks: Task[];
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   activeTaskId?: string | null;
 }) {
@@ -175,12 +170,10 @@ function KanbanColumn({
 
 export function AssignedTasksKanban({
   tasks = [],
-  onDeleteTask,
-  onAssignTask,
-  onComplete,
-  onStart,
-  onPause,
-  onCancel,
+  setSelectedTask,
+  openDeleteModal,
+  openAssignModal,
+  updateTask,
 }: AssignedTasksKanbanProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -217,7 +210,6 @@ export function AssignedTasksKanban({
 
     if (!over) return;
 
-    const taskId = active.id as string;
     const task = active.data.current?.task as Task;
     const newStatus = over.id as string;
 
@@ -225,15 +217,17 @@ export function AssignedTasksKanban({
     if (task.status === newStatus) return;
 
     // Call the appropriate callback based on the new status
-    if (newStatus === "DONE" && onComplete) {
-      onComplete(taskId);
-    } else if (newStatus === "IN_PROGRESS" && onStart) {
-      onStart(taskId);
-    } else if (newStatus === "TODO" && onPause) {
-      onPause(taskId);
-    } else if (newStatus === "CANCELLED" && onCancel) {
-      onCancel(taskId);
-    }
+    updateTask?.({ ...task, status: newStatus });
+  }
+
+  function onDeleteTask(task: Task) {
+    setSelectedTask(task);
+    openDeleteModal?.(true);
+  }
+
+  function onAssignTask(task: Task) {
+    setSelectedTask(task);
+    openAssignModal?.(true);
   }
 
   if (tasks.length === 0) {

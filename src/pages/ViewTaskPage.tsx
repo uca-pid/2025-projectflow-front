@@ -9,6 +9,7 @@ import { ConfirmCloneTaskModal } from "@/components/ConfirmCloneTaskModal";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { flattenTasks } from "@/lib/task-utils";
+import { apiCall } from "@/lib/api-client";
 
 export default function ViewTaskPage() {
   const { taskId } = useParams();
@@ -23,14 +24,9 @@ export default function ViewTaskPage() {
   // Fetch and load tasks
   useEffect(() => {
     try {
-      fetch(`${import.meta.env.VITE_API_URL}/task/${taskId}`, {
-        method: "GET",
-        credentials: "include",
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setTask(data?.data);
-        });
+      apiCall("GET", `/task/${taskId}`).then((response) => {
+        setTask(response?.data as Task);
+      });
     } catch (error) {
       setError(true);
       console.error("Error fetching task:", error);
@@ -40,15 +36,8 @@ export default function ViewTaskPage() {
   }, [taskId]);
 
   const handleClone = async () => {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/task/clone/${taskId}`,
-      {
-        method: "POST",
-        credentials: "include",
-      },
-    );
-    const data = await response.json();
-    if (data.success) {
+    const response = await apiCall("POST", `/task/${taskId}/clone`);
+    if (response.success) {
       setIsCloned(true);
       toast.success("Task cloned successfully");
     } else {
@@ -65,6 +54,19 @@ export default function ViewTaskPage() {
       <div className="text-red-500 flex w-screen h-screen items-center justify-center">
         Error fetching tasks.
       </div>
+    );
+  }
+
+  if (!task || !task.isPublic) {
+    return (
+      <BasicPageLayout>
+        <div className="flex flex-col w-screen pt-12 items-center justify-center">
+          <p className="text-2xl font-bold text-gray-900">Task not found</p>
+          <p className="text-xl text-muted-foreground">
+            Sorry, this task either does not exist or is not public
+          </p>
+        </div>
+      </BasicPageLayout>
     );
   }
 

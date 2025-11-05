@@ -83,11 +83,6 @@ export default function TreeGraph({
     setSelectedTask(task);
   };
 
-  // Deselect tasks whenever project changes
-  useEffect(() => {
-    setSelectedTask(null);
-  }, [tasks, setSelectedTask]);
-
   useEffect(() => {
     setLocalTasks(tasks!.filter((task) => task.parentTaskId === null));
   }, [tasks]);
@@ -383,14 +378,6 @@ export default function TreeGraph({
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <StatusIcon className="h-4 w-4 flex-shrink-0" />
-                          {/*
-                          <Badge
-                            variant="secondary"
-                            className={`text-xs ${priorityColors[node.task.priority]}`}
-                          >
-                            {node.task.priority}
-                          </Badge>
-                          */}
                         </div>
                         <Button
                           variant="ghost"

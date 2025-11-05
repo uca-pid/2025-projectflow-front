@@ -36,11 +36,9 @@ import {
 
 type AssignedTasksTableProps = {
   tasks: Task[];
-  onCancelTask?: (taskId: string) => void;
-  onStartTask?: (taskId: string) => void;
-  onPauseTask?: (taskId: string) => void;
-  onCompleteTask?: (taskId: string) => void;
-  onCreateSubTask?: (task: Task) => void;
+  setSelectedTask: (task: Task | null) => void;
+  updateTask: (task: Task) => Promise<void>;
+  openCreateSubTask?: (open: boolean) => void;
 };
 
 function TaskRow({
@@ -58,10 +56,10 @@ function TaskRow({
   level?: number;
   expandedTasks: Set<string>;
   toggleTask: (taskId: string) => void;
-  onCancelTask?: (taskId: string) => void;
-  onStartTask?: (taskId: string) => void;
-  onPauseTask?: (taskId: string) => void;
-  onCompleteTask?: (taskId: string) => void;
+  onCancelTask?: (task: Task) => void;
+  onStartTask?: (task: Task) => void;
+  onPauseTask?: (task: Task) => void;
+  onCompleteTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
 }) {
   const hasSubtasks = task.subTasks && task.subTasks.length > 0;
@@ -115,7 +113,11 @@ function TaskRow({
             <>
               {(() => {
                 const StatusIcon = getStatusIcon(task.status);
-                return <StatusIcon className="w-3 h-3 mr-1" />;
+                return (
+                  <StatusIcon
+                    className={`w-3 h-3 mr-1 ${task.status === "IN_PROGRESS" && "animate-spin"}`}
+                  />
+                );
               })()}
               {getStatusLabel(task.status)}
             </>
@@ -139,23 +141,23 @@ function TaskRow({
                 Add Subtask
               </DropdownMenuItem>
               {task.status === "TODO" && (
-                <DropdownMenuItem onClick={() => onStartTask!(task.id)}>
+                <DropdownMenuItem onClick={() => onStartTask!(task)}>
                   <Flame className="mr-2 h-4 w-4" />
                   Start Working
                 </DropdownMenuItem>
               )}
               {task.status === "IN_PROGRESS" && (
-                <DropdownMenuItem onClick={() => onPauseTask!(task.id)}>
+                <DropdownMenuItem onClick={() => onPauseTask!(task)}>
                   <Pause className="mr-2 h-4 w-4" />
                   Halt
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => onCompleteTask!(task.id)}>
+              <DropdownMenuItem onClick={() => onCompleteTask!(task)}>
                 <Check className="mr-2 h-4 w-4" />
                 Complete
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onCancelTask!(task.id)}
+                onClick={() => onCancelTask!(task)}
                 className="text-red-600"
               >
                 <Ban className="mr-2 h-4 w-4 text-red-600" />
@@ -188,11 +190,9 @@ function TaskRow({
 
 export function AssignedTasksTable({
   tasks,
-  onCancelTask,
-  onStartTask,
-  onPauseTask,
-  onCompleteTask,
-  onCreateSubTask,
+  setSelectedTask,
+  updateTask,
+  openCreateSubTask,
 }: AssignedTasksTableProps) {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
@@ -207,6 +207,32 @@ export function AssignedTasksTable({
       return newSet;
     });
   };
+
+  function onCreateSubTask(task: Task) {
+    setSelectedTask(task);
+    openCreateSubTask?.(true);
+  }
+
+  async function onCancelTask(task: Task) {
+    const updatedTask = { ...task, status: "CANCELLED" };
+    if (!updateTask) console.log("updateTask is undefined");
+    await updateTask(updatedTask);
+  }
+
+  async function onStartTask(task: Task) {
+    const updatedTask = { ...task, status: "IN_PROGRESS" };
+    await updateTask(updatedTask);
+  }
+
+  async function onPauseTask(task: Task) {
+    const updatedTask = { ...task, status: "TODO" };
+    await updateTask(updatedTask);
+  }
+
+  async function onCompleteTask(task: Task) {
+    const updatedTask = { ...task, status: "DONE" };
+    await updateTask(updatedTask);
+  }
 
   if (tasks.length === 0) {
     return (

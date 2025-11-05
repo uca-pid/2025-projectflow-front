@@ -1,5 +1,3 @@
-import type { Task } from "@/types/task";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -15,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import {
   UserPlus,
   MoreHorizontal,
@@ -32,13 +31,15 @@ import {
   getStatusLabel,
   formatDeadline,
 } from "@/lib/task-status-utils";
+import { type Task } from "@/types/task";
 
 type MyTasksTableProps = {
   tasks: Task[];
-  onEditTask?: (task: Task) => void;
-  onDeleteTask?: (task: Task) => void;
-  onAssignTask?: (task: Task) => void;
-  onCreateSubTask?: (task: Task) => void;
+  setSelectedTask: (task: Task) => void;
+  openEditModal?: (open: boolean) => void;
+  openDeleteModal?: (open: boolean) => void;
+  openAssignModal?: (open: boolean) => void;
+  openSubtaskModal?: (open: boolean) => void;
 };
 
 function TaskRow({
@@ -111,7 +112,11 @@ function TaskRow({
             <>
               {(() => {
                 const StatusIcon = getStatusIcon(task.status);
-                return <StatusIcon className="w-3 h-3 mr-1" />;
+                return (
+                  <StatusIcon
+                    className={`w-3 h-3 mr-1 ${task.status === "IN_PROGRESS" && "animate-spin"}`}
+                  />
+                );
               })()}
               {getStatusLabel(task.status)}
             </>
@@ -171,10 +176,11 @@ function TaskRow({
 
 export function MyTasksTable({
   tasks,
-  onEditTask,
-  onDeleteTask,
-  onAssignTask,
-  onCreateSubTask,
+  setSelectedTask,
+  openEditModal,
+  openAssignModal,
+  openSubtaskModal,
+  openDeleteModal,
 }: MyTasksTableProps) {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
@@ -197,6 +203,26 @@ export function MyTasksTable({
         <p className="text-gray-400">Create your first task to get started</p>
       </div>
     );
+  }
+
+  function onEditTask(task: Task) {
+    setSelectedTask(task);
+    openEditModal?.(true);
+  }
+
+  function onDeleteTask(task: Task) {
+    setSelectedTask(task);
+    openDeleteModal?.(true);
+  }
+
+  function onAssignTask(task: Task) {
+    setSelectedTask(task);
+    openAssignModal?.(true);
+  }
+
+  function onCreateSubTask(task: Task) {
+    setSelectedTask(task);
+    openSubtaskModal?.(true);
   }
 
   return (

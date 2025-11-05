@@ -41,7 +41,7 @@ export default function BasicPageLayout({ children }: LayoutProps) {
 
               <div className="flex items-center space-x-4">
                 <span className="text-gray-600 text-sm hidden sm:block">
-                  Shalom, {user?.name}!
+                  Hello, {user?.name}!
                 </span>
 
                 <NotificationBell />

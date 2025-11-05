@@ -10,6 +10,7 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   creatorId: string;
+  creator: Partial<User> | null;
   assignedUsers: Partial<User>[];
   appliedUsers: Partial<User>[];
   trackedUsers: Partial<User>[];
@@ -19,3 +20,11 @@ export interface Task {
 }
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";
+
+export type TaskType = "my" | "assigned" | "tracked";
+
+export interface TasksUseState {
+  my: Task[];
+  assigned: Task[];
+  tracked: Task[];
+}

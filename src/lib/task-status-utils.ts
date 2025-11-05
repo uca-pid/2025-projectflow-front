@@ -1,10 +1,4 @@
-import {
-  Clock,
-  Check,
-  LoaderCircle,
-  Ban,
-  type LucideIcon,
-} from "lucide-react";
+import { Clock, Check, LoaderCircle, Ban, type LucideIcon } from "lucide-react";
 
 export function getStatusVariant(
   status: string,

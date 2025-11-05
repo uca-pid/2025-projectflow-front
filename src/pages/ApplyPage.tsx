@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import type { Task } from "@/types/task";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { apiCall } from "@/lib/api-client";
 
 export default function ApplyPage() {
   const { taskId } = useParams<{ taskId: string }>();
@@ -25,13 +26,9 @@ export default function ApplyPage() {
 
   useEffect(() => {
     try {
-      fetch(`${import.meta.env.VITE_API_URL}/task/${taskId}`, {
-        credentials: "include",
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setTask(data.data);
-        });
+      apiCall("GET", `/task/${taskId}`).then((response) => {
+        setTask(response.data as Task);
+      });
     } catch {
       setError(true);
     } finally {
@@ -41,16 +38,10 @@ export default function ApplyPage() {
 
   const handleApply = async () => {
     setApplying(true);
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/task/${taskId}/apply`,
-      {
-        method: "POST",
-        credentials: "include",
-      },
-    );
+    const response = await apiCall("POST", `/task/${taskId}/apply`);
     setApplying(false);
 
-    if (!response.ok) {
+    if (!response.success) {
       toast.error("Error applying to task");
     } else {
       toast.success("Task applied successfully");

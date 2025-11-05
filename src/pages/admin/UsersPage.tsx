@@ -22,6 +22,7 @@ import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import { type User } from "@/types/user";
+import { apiCall } from "@/lib/api-client";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[] | null>();
@@ -37,13 +38,9 @@ export default function AdminUsersPage() {
   //Fetch users from API
   useEffect(() => {
     try {
-      fetch(`${import.meta.env.VITE_API_URL}/user/getAll`, {
-        credentials: "include",
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setUsers(data.data);
-        });
+      apiCall("GET", "/user/getAll").then((response) => {
+        setUsers(response.data as User[]);
+      });
     } catch {
       setError(true);
     } finally {
@@ -61,28 +58,24 @@ export default function AdminUsersPage() {
 
   const handleUserUpdate = async (user: User) => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/user/update/${selectedUser?.id}`,
+      const response = await apiCall(
+        "PUT",
+        `/user/update/${selectedUser?.id}`,
         {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userToUpdateData: user }),
-          credentials: "include",
+          userToUpdateData: user,
         },
       );
 
-      if (!response.ok) {
+      if (!response.success) {
         toast.error("Error updating user");
         throw new Error("Error updating user");
       }
 
-      const data = await response.json();
-
       toast.success("User updated successfully");
       setUsers((prevUsers) =>
-        prevUsers?.map((u) => (u.id === selectedUser?.id ? data.data : u)),
+        prevUsers?.map((u) =>
+          u.id === selectedUser?.id ? (response.data as User) : u,
+        ),
       );
       setEditModalOpen(false);
       setSelectedUser(null);
@@ -93,18 +86,9 @@ export default function AdminUsersPage() {
 
   const handleUserDelete = async () => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/user/${selectedUser?.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        },
-      );
+      const response = await apiCall("DELETE", `/user/${selectedUser?.id}`);
 
-      if (!response.ok) {
+      if (!response.success) {
         toast.error("Error deleting user");
         throw new Error("Error deleting user");
       }
