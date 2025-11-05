@@ -58,10 +58,10 @@ export default function ViewTaskPage() {
     );
   }
 
-  if (!task || !task.isPublic) {
+  if (!task?.status) {
     return (
       <BasicPageLayout>
-        <div className="flex flex-col w-screen pt-12 items-center justify-center">
+        <div className="w-full flex flex-col pt-12 items-center justify-center">
           <p className="text-2xl font-bold text-gray-900">Task not found</p>
           <p className="text-xl text-muted-foreground">
             Sorry, this task either does not exist or is not public
