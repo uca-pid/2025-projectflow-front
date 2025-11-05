@@ -24,6 +24,7 @@ import {
   ChevronDown,
   Check,
   Ban,
+  Eye,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -39,6 +40,7 @@ type AssignedTasksTableProps = {
   setSelectedTask: (task: Task | null) => void;
   updateTask: (task: Task) => Promise<void>;
   openCreateSubTask?: (open: boolean) => void;
+  openDetailsModal?: (open: boolean) => void;
 };
 
 function TaskRow({
@@ -51,6 +53,7 @@ function TaskRow({
   onPauseTask,
   onCompleteTask,
   onCreateSubTask,
+  onDetailsModal,
 }: {
   task: Task;
   level?: number;
@@ -61,6 +64,7 @@ function TaskRow({
   onPauseTask?: (task: Task) => void;
   onCompleteTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
+  onDetailsModal?: (task: Task) => void;
 }) {
   const hasSubtasks = task.subTasks && task.subTasks.length > 0;
   const isExpanded = expandedTasks.has(task.id);
@@ -140,6 +144,10 @@ function TaskRow({
                 <GitBranchPlus className="mr-2 h-4 w-4" />
                 Add Subtask
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDetailsModal!(task)}>
+                <Eye className="mr-2 h-4 w-4" />
+                Details
+              </DropdownMenuItem>
               {task.status === "TODO" && (
                 <DropdownMenuItem onClick={() => onStartTask!(task)}>
                   <Flame className="mr-2 h-4 w-4" />
@@ -193,6 +201,7 @@ export function AssignedTasksTable({
   setSelectedTask,
   updateTask,
   openCreateSubTask,
+  openDetailsModal,
 }: AssignedTasksTableProps) {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
@@ -232,6 +241,11 @@ export function AssignedTasksTable({
   async function onCompleteTask(task: Task) {
     const updatedTask = { ...task, status: "DONE" };
     await updateTask(updatedTask);
+  }
+
+  function onDetailsModal(task: Task) {
+    setSelectedTask(task);
+    openDetailsModal?.(true);
   }
 
   if (tasks.length === 0) {
@@ -279,6 +293,7 @@ export function AssignedTasksTable({
               onPauseTask={onPauseTask}
               onCompleteTask={onCompleteTask}
               onCreateSubTask={onCreateSubTask}
+              onDetailsModal={onDetailsModal}
             />
           ))}
         </TableBody>

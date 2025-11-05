@@ -255,6 +255,14 @@ export default function TreeGraph({
         {selectedTask && (
           <>
             <div className="flex-row space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                title="Edit Task"
+                onClick={() => openEditModal(selectedTask)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
               {openDetailsModal && (
                 <Button
                   variant="outline"
@@ -265,25 +273,6 @@ export default function TreeGraph({
                   <Eye className="h-4 w-4" />
                 </Button>
               )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                title="Edit Task"
-                onClick={() => openEditModal(selectedTask)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="outline"
-                className="text-red-500"
-                size="sm"
-                title="Delete Task"
-                onClick={() => openDeleteTask(selectedTask)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
             </div>
             <div className="flex-row space-x-2">
               <Button
@@ -302,6 +291,17 @@ export default function TreeGraph({
                 onClick={() => openAssignTask(selectedTask)}
               >
                 <UserPlus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex space-x-2 justify-end">
+              <Button
+                variant="outline"
+                className="text-red-500"
+                size="sm"
+                title="Delete Task"
+                onClick={() => openDeleteTask(selectedTask)}
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </>

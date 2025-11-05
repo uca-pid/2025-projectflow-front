@@ -332,6 +332,7 @@ export default function TasksPage() {
               tasks={tasks.assigned}
               setSelectedTask={setSelectedTask}
               openCreateSubTask={setShowCreateSubModal}
+              openDetailsModal={setShowDetailsModal}
               updateTask={updateTask}
             />
           )}
@@ -350,6 +351,7 @@ export default function TasksPage() {
               selectedTask={selectedTask}
               setSelectedTask={setSelectedTask}
               openAddSubtask={() => setShowCreateSubModal(true)}
+              openDetailsModal={() => setShowDetailsModal(true)}
               updateTask={updateTask}
             />
           )}
