@@ -62,7 +62,11 @@ export function EditTaskModal({
     } else {
       const deadlineDate = new Date(formData.deadline);
       const now = new Date();
-      if (deadlineDate <= now && formData.status !== "DONE") {
+      if (
+        deadlineDate <= now &&
+        formData.status !== "DONE" &&
+        formData.status !== "CANCELLED"
+      ) {
         newErrors.deadline =
           "Deadline must be in the future for uncompleted tasks";
       }
@@ -201,7 +205,6 @@ export function EditTaskModal({
               type="datetime-local"
               value={formData.deadline}
               onChange={(e) => handleInputChange("deadline", e.target.value)}
-              min={getMinDateTime()}
               className={errors.deadline ? "border-red-500" : ""}
             />
             {errors.deadline && (

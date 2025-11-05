@@ -86,7 +86,7 @@ export const AssignTaskModal = ({
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const link = `${import.meta.env.VITE_FRONT_URL}/apply/${task?.id}`;
+  const link = `${import.meta.env.VITE_FRONT_URL}/${task?.isPublic ? "task" : "apply"}/${task?.id}`;
 
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,7 +197,10 @@ export const AssignTaskModal = ({
                   <div className="flex items-center gap-2">
                     <Link className="h-4 w-4" />
                     <Label className="text-sm font-medium">
-                      Or share this link to invite viewers:
+                      {task?.isPublic
+                        ? "Your task is public, everyone can see it with this link"
+                        : "Or share this link to invite viewers"}
+                      :
                     </Label>
                   </div>
                   <ClickHereToCopy link={link} />

@@ -17,12 +17,14 @@ import { PublicTasksKanban } from "@/components/PublicTasksKanban";
 import { PublicTasksTable } from "@/components/PublicTasksTable";
 import TrackedTreeGraph from "@/components/TrackedTreeGraph";
 import TreeGraph from "@/components/TreeGraph";
-import {
-  TasksViewSelector,
-  type ViewType,
-} from "@/components/TasksViewSelector";
+import Dashboard from "@/components/Dashboard";
 
-import { type Task, type TasksUseState, type TaskType } from "@/types/task";
+import {
+  type Task,
+  type TasksUseState,
+  type TaskType,
+  type ViewType,
+} from "@/types/task";
 import {
   flattenTasks,
   updateTaskInTree,
@@ -34,7 +36,6 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { apiCall } from "@/lib/api-client";
 
-import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 export default function TasksPage() {
@@ -53,7 +54,6 @@ export default function TasksPage() {
   const [selectedType, setSelectedType] = useState<TaskType>("my");
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const currentTasks = tasks[selectedType];
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCreateSubModal, setShowCreateSubModal] = useState(false);
@@ -69,6 +69,10 @@ export default function TasksPage() {
           apiCall("GET", "/task/getAssignedTasks"),
           apiCall("GET", "/task/getTrackedTasks"),
         ]);
+
+        if (!myRes.success || !assignedRes.success || !trackedRes.success) {
+          throw new Error("Failed to fetch tasks");
+        }
 
         setTasks({
           my: myRes.data as Task[],
@@ -136,6 +140,7 @@ export default function TasksPage() {
     const updatedTask = response.data as Task;
     const updatedTasks = updateTaskInTree(selectedTasks, task.id, updatedTask);
     setTasks({ ...tasks, [selectedType]: updatedTasks });
+    setSelectedTask(updatedTask);
   }
 
   async function createTask(task: Task) {
@@ -144,6 +149,7 @@ export default function TasksPage() {
     const newTask = response.data as Task;
     const updatedTasks = [...tasks[selectedType], newTask];
     setTasks({ ...tasks, [selectedType]: updatedTasks });
+    setSelectedTask(newTask);
   }
 
   async function createSubtask(task: Task) {
@@ -161,13 +167,15 @@ export default function TasksPage() {
       newTask,
     );
     setTasks({ ...tasks, [selectedType]: updatedTasks });
+    setSelectedTask(newTask);
   }
 
   async function deleteTask(taskId: string) {
     const response = await apiCall("DELETE", `/task/${taskId}`);
-    if (response.success) toast.success("Task deleted successfully");
+    if (response.success) toast.success("Okay, See you! (Mr Ho)");
     const updatedTasks = deleteTaskFromTree(tasks[selectedType], taskId);
     setTasks({ ...tasks, [selectedType]: updatedTasks });
+    setSelectedTask(null);
   }
 
   async function allowViewer(task: Task, userId: string, allow: boolean) {
@@ -206,71 +214,14 @@ export default function TasksPage() {
   return (
     <BasicPageLayout>
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Task Management
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Organize and manage your tasks with specific deadlines
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <TasksViewSelector
-              selectedView={selectedView}
-              onViewChange={(view: ViewType) => {
-                setSelectedView(view);
-                localStorage.setItem("viewType", view);
-              }}
-            />
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="h-4 w-4" />
-              Task
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="text-2xl font-bold text-gray-900">
-            {flattenTasks(currentTasks).length}
-          </div>
-          <div className="text-gray-600">Total Tasks</div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="text-2xl font-bold text-blue-600">
-            {
-              flattenTasks(currentTasks).filter(
-                (task) => task.status === "IN_PROGRESS",
-              ).length
-            }
-          </div>
-          <div className="text-gray-600">In Progress</div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="text-2xl font-bold text-green-600">
-            {
-              flattenTasks(currentTasks).filter(
-                (task) => task.status === "DONE",
-              ).length
-            }
-          </div>
-          <div className="text-gray-600">Completed</div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="text-2xl font-bold text-red-600">
-            {
-              flattenTasks(currentTasks).filter(
-                (task) => task.status === "CANCELLED",
-              ).length
-            }
-          </div>
-          <div className="text-gray-600">Cancelled</div>
-        </div>
-      </div>
+      <Dashboard
+        tasks={tasks[selectedType]}
+        selectedView={selectedView}
+        setSelectedView={setSelectedView}
+        openCreateModal={setShowCreateModal}
+        showGraphs
+        showTitle
+      />
 
       <Tabs
         value={selectedType}

@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import LoadingPage from "./LoadingPage";
-import { type Task } from "@/types/task";
+import { type Task, type ViewType } from "@/types/task";
 import { CopyPlus, Check } from "lucide-react";
 import { PublicTasksTable } from "@/components/PublicTasksTable";
 import { ConfirmCloneTaskModal } from "@/components/ConfirmCloneTaskModal";
+import Dashboard from "@/components/Dashboard";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { flattenTasks } from "@/lib/task-utils";
@@ -100,45 +101,7 @@ export default function ViewTaskPage() {
       </div>
 
       {/* Stats */}
-      {task?.isPublic && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-gray-900">
-              {flattenTasks([task!]).length}
-            </div>
-            <div className="text-gray-600">Total Tasks</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-blue-600">
-              {
-                flattenTasks([task!]).filter(
-                  (task) => task.status === "IN_PROGRESS",
-                ).length
-              }
-            </div>
-            <div className="text-gray-600">In Progress</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-green-600">
-              {
-                flattenTasks([task!]).filter((task) => task.status === "DONE")
-                  .length
-              }
-            </div>
-            <div className="text-gray-600">Completed</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-red-600">
-              {
-                flattenTasks([task!]).filter(
-                  (task) => task.status === "CANCELLED",
-                ).length
-              }
-            </div>
-            <div className="text-gray-600">Cancelled</div>
-          </div>
-        </div>
-      )}
+      {task?.isPublic && <Dashboard tasks={[task]} />}
 
       <PublicTasksTable tasks={flattenTasks([task!])} />
 
