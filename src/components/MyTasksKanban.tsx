@@ -1,4 +1,3 @@
-import type { Task } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,17 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Clock,
-  Check,
-  LoaderCircle,
-  Ban,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  UserPlus,
-  GitBranchPlus,
-} from "lucide-react";
-import {
   DndContext,
   type DragEndEvent,
   DragOverlay,
@@ -34,59 +22,34 @@ import {
   closestCorners,
 } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
+
+import {
+  Clock,
+  Check,
+  LoaderCircle,
+  Ban,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  UserPlus,
+  GitBranchPlus,
+  Eye,
+} from "lucide-react";
 import { useState, useEffect } from "react";
+
+import { getStatusTailwind, formatDeadline } from "@/lib/task-status-utils";
+import type { Task } from "@/types/task";
 
 type MyTasksKanbanProps = {
   tasks: Task[];
-  onEditTask?: (task: Task) => void;
-  onDeleteTask?: (task: Task) => void;
-  onAssignTask?: (task: Task) => void;
-  onCreateSubTask?: (task: Task) => void;
-  onComplete?: (taskId: string) => void;
-  onStart?: (taskId: string) => void;
-  onPause?: (taskId: string) => void;
-  onCancel?: (taskId: string) => void;
+  setSelectedTask: (task: Task | null) => void;
+  openEditModal?: (open: boolean) => void;
+  openDeleteModal?: (open: boolean) => void;
+  openAssignModal?: (open: boolean) => void;
+  openSubtaskModal?: (open: boolean) => void;
+  openDetailsModal?: (open: boolean) => void;
+  updateTask?: (task: Task) => void;
 };
-
-function getStatusTailwind(status: string): string {
-  switch (status) {
-    case "DONE":
-      return "bg-green-100 border border-green-400 text-green-800";
-    case "IN_PROGRESS":
-      return "bg-blue-100 border border-blue-400 text-blue-800";
-    case "CANCELLED":
-      return "bg-red-100 border border-red-400 text-red-800";
-    case "TODO":
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-    default:
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-  }
-}
-
-function formatDeadline(date: Date): string {
-  const now = new Date();
-  const deadline = new Date(date);
-  const diffMs = deadline.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  const formattedDate = deadline.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  if (diffDays < 0) {
-    return `${formattedDate} (Overdue)`;
-  } else if (diffDays === 0) {
-    return `${formattedDate} (Today)`;
-  } else if (diffDays === 1) {
-    return `${formattedDate} (Tomorrow)`;
-  } else {
-    return `${formattedDate} (${diffDays} days)`;
-  }
-}
 
 function TaskCard({
   task,
@@ -94,6 +57,7 @@ function TaskCard({
   onDeleteTask,
   onAssignTask,
   onCreateSubTask,
+  onViewDetails,
   isDragging = false,
 }: {
   task: Task;
@@ -101,6 +65,7 @@ function TaskCard({
   onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
+  onViewDetails?: (task: Task) => void;
   isDragging?: boolean;
 }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
@@ -143,6 +108,12 @@ function TaskCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {onViewDetails && (
+                <DropdownMenuItem onClick={() => onViewDetails(task)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Details
+                </DropdownMenuItem>
+              )}
               {onEditTask && (
                 <DropdownMenuItem onClick={() => onEditTask(task)}>
                   <Edit className="mr-2 h-4 w-4" />
@@ -208,6 +179,7 @@ function KanbanColumn({
   onDeleteTask,
   onAssignTask,
   onCreateSubTask,
+  onViewDetails,
   activeTaskId,
 }: {
   title: string;
@@ -217,6 +189,7 @@ function KanbanColumn({
   onDeleteTask?: (taskId: Task) => void;
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
+  onViewDetails?: (task: Task) => void;
   activeTaskId?: string | null;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -250,6 +223,7 @@ function KanbanColumn({
             onDeleteTask={onDeleteTask}
             onAssignTask={onAssignTask}
             onCreateSubTask={onCreateSubTask}
+            onViewDetails={onViewDetails}
             isDragging={task.id === activeTaskId}
           />
         ))}
@@ -265,14 +239,13 @@ function KanbanColumn({
 
 export function MyTasksKanban({
   tasks = [],
-  onEditTask,
-  onDeleteTask,
-  onAssignTask,
-  onCreateSubTask,
-  onComplete,
-  onStart,
-  onPause,
-  onCancel,
+  setSelectedTask,
+  openEditModal,
+  openDeleteModal,
+  openAssignModal,
+  openSubtaskModal,
+  openDetailsModal,
+  updateTask,
 }: MyTasksKanbanProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -309,23 +282,38 @@ export function MyTasksKanban({
 
     if (!over) return;
 
-    const taskId = active.id as string;
     const task = active.data.current?.task as Task;
     const newStatus = over.id as string;
 
     // If dropped in the same column, do nothing
     if (task.status === newStatus) return;
 
-    // Call the appropriate callback based on the new status
-    if (newStatus === "DONE" && onComplete) {
-      onComplete(taskId);
-    } else if (newStatus === "IN_PROGRESS" && onStart) {
-      onStart(taskId);
-    } else if (newStatus === "TODO" && onPause) {
-      onPause(taskId);
-    } else if (newStatus === "CANCELLED" && onCancel) {
-      onCancel(taskId);
-    }
+    updateTask?.({ ...task, status: newStatus });
+  }
+
+  function handleOpenEdit(task: Task) {
+    openEditModal?.(true);
+    setSelectedTask?.(task);
+  }
+
+  function handleOpenDelete(task: Task) {
+    openDeleteModal?.(true);
+    setSelectedTask?.(task);
+  }
+
+  function handleOpenAssign(task: Task) {
+    openAssignModal?.(true);
+    setSelectedTask?.(task);
+  }
+
+  function handleOpenSubtask(task: Task) {
+    openSubtaskModal?.(true);
+    setSelectedTask?.(task);
+  }
+
+  function handleOpenDetails(task: Task) {
+    openDetailsModal?.(true);
+    setSelectedTask?.(task);
   }
 
   if (tasks.length === 0) {
@@ -351,40 +339,44 @@ export function MyTasksKanban({
           title="To Do"
           status="TODO"
           tasks={todoTasks}
-          onEditTask={onEditTask}
-          onDeleteTask={onDeleteTask}
-          onAssignTask={onAssignTask}
-          onCreateSubTask={onCreateSubTask}
+          onEditTask={handleOpenEdit}
+          onDeleteTask={handleOpenDelete}
+          onAssignTask={handleOpenAssign}
+          onCreateSubTask={handleOpenSubtask}
+          onViewDetails={handleOpenDetails}
           activeTaskId={activeTask?.id}
         />
         <KanbanColumn
           title="In Progress"
           status="IN_PROGRESS"
           tasks={inProgressTasks}
-          onEditTask={onEditTask}
-          onDeleteTask={onDeleteTask}
-          onAssignTask={onAssignTask}
-          onCreateSubTask={onCreateSubTask}
+          onEditTask={handleOpenEdit}
+          onDeleteTask={handleOpenDelete}
+          onAssignTask={handleOpenAssign}
+          onCreateSubTask={handleOpenSubtask}
+          onViewDetails={handleOpenDetails}
           activeTaskId={activeTask?.id}
         />
         <KanbanColumn
           title="Completed"
           status="DONE"
           tasks={doneTasks}
-          onEditTask={onEditTask}
-          onDeleteTask={onDeleteTask}
-          onAssignTask={onAssignTask}
-          onCreateSubTask={onCreateSubTask}
+          onEditTask={handleOpenEdit}
+          onDeleteTask={handleOpenDelete}
+          onAssignTask={handleOpenAssign}
+          onCreateSubTask={handleOpenSubtask}
+          onViewDetails={handleOpenDetails}
           activeTaskId={activeTask?.id}
         />
         <KanbanColumn
           title="Cancelled"
           status="CANCELLED"
           tasks={cancelledTasks}
-          onEditTask={onEditTask}
-          onDeleteTask={onDeleteTask}
-          onAssignTask={onAssignTask}
-          onCreateSubTask={onCreateSubTask}
+          onEditTask={handleOpenEdit}
+          onDeleteTask={handleOpenDelete}
+          onAssignTask={handleOpenAssign}
+          onCreateSubTask={handleOpenSubtask}
+          onViewDetails={handleOpenDetails}
           activeTaskId={activeTask?.id}
         />
       </div>
@@ -392,10 +384,10 @@ export function MyTasksKanban({
         {activeTask ? (
           <TaskCard
             task={activeTask}
-            onEditTask={onEditTask}
-            onDeleteTask={onDeleteTask}
-            onAssignTask={onAssignTask}
-            onCreateSubTask={onCreateSubTask}
+            onEditTask={handleOpenEdit}
+            onDeleteTask={handleOpenDelete}
+            onAssignTask={handleOpenAssign}
+            onCreateSubTask={handleOpenSubtask}
           />
         ) : null}
       </DragOverlay>

@@ -7,50 +7,14 @@ import {
 } from "@/components/ui/card";
 import { Clock, Check, LoaderCircle, Ban } from "lucide-react";
 import { useState, useEffect } from "react";
+import {
+  getStatusTailwind,
+  formatDeadline,
+} from "@/lib/task-status-utils";
 
 type MyTasksKanbanProps = {
   tasks: Task[];
 };
-
-function getStatusTailwind(status: string): string {
-  switch (status) {
-    case "DONE":
-      return "bg-green-100 border border-green-400 text-green-800";
-    case "IN_PROGRESS":
-      return "bg-blue-100 border border-blue-400 text-blue-800";
-    case "CANCELLED":
-      return "bg-red-100 border border-red-400 text-red-800";
-    case "TODO":
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-    default:
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-  }
-}
-
-function formatDeadline(date: Date): string {
-  const now = new Date();
-  const deadline = new Date(date);
-  const diffMs = deadline.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  const formattedDate = deadline.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  if (diffDays < 0) {
-    return `${formattedDate} (Overdue)`;
-  } else if (diffDays === 0) {
-    return `${formattedDate} (Today)`;
-  } else if (diffDays === 1) {
-    return `${formattedDate} (Tomorrow)`;
-  } else {
-    return `${formattedDate} (${diffDays} days)`;
-  }
-}
 
 function TaskCard({ task }: { task: Task }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;

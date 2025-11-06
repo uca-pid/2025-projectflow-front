@@ -2,36 +2,18 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import LoadingPage from "./LoadingPage";
-import { type Task } from "@/types/task";
+import { type Task, type ViewType, type Note } from "@/types/task";
 import { CopyPlus, Check } from "lucide-react";
 import { PublicTasksTable } from "@/components/PublicTasksTable";
+import { TaskNotes } from "@/components/TaskNotes";
 import { ConfirmCloneTaskModal } from "@/components/ConfirmCloneTaskModal";
+import Dashboard from "@/components/Dashboard";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
+import { flattenTasks } from "@/lib/task-utils";
+import { apiCall } from "@/lib/api-client";
 
-function flattenTasks(tasks: Partial<Task>[]): Task[] {
-  const map = new Map<string, Task>();
-
-  function traverse(list: Partial<Task>[]) {
-    for (const task of list) {
-      if (task.id) {
-        // if not already stored, add it
-        if (!map.has(task.id)) {
-          map.set(task.id, task as Task);
-        }
-      }
-
-      if (task.subTasks && task.subTasks.length > 0) {
-        traverse(task.subTasks);
-      }
-    }
-  }
-
-  traverse(tasks);
-  return Array.from(map.values());
-}
-
-export default function TasksPage() {
+export default function ViewTaskPage() {
   const { taskId } = useParams();
 
   const [task, setTask] = useState<Task>();
@@ -43,33 +25,36 @@ export default function TasksPage() {
 
   // Fetch and load tasks
   useEffect(() => {
-    try {
-      fetch(`${import.meta.env.VITE_API_URL}/task/${taskId}`, {
-        method: "GET",
-        credentials: "include",
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setTask(data?.data);
-        });
-    } catch (error) {
-      setError(true);
-      console.error("Error fetching task:", error);
-    } finally {
-      setLoading(false);
-    }
+    const fetchTaskWithNotes = async () => {
+      try {
+        const response = await apiCall("GET", `/task/${taskId}`);
+        const taskData = response?.data as Task;
+        
+        if (taskData) {
+          try {
+            const notesResponse = await apiCall("GET", `/task/${taskId}/notes`);
+            taskData.notes = (notesResponse?.data as Note[]) || [];
+          } catch (notesError) {
+            console.warn("Could not fetch notes (user might not have access):", notesError);
+            taskData.notes = [];
+          }
+        }
+        
+        setTask(taskData);
+      } catch (error) {
+        setError(true);
+        console.error("Error fetching task:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTaskWithNotes();
   }, [taskId]);
 
   const handleClone = async () => {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/task/clone/${taskId}`,
-      {
-        method: "POST",
-        credentials: "include",
-      },
-    );
-    const data = await response.json();
-    if (data.success) {
+    const response = await apiCall("POST", `/task/${taskId}/clone`);
+    if (response.success) {
       setIsCloned(true);
       toast.success("Task cloned successfully");
     } else {
@@ -86,6 +71,19 @@ export default function TasksPage() {
       <div className="text-red-500 flex w-screen h-screen items-center justify-center">
         Error fetching tasks.
       </div>
+    );
+  }
+
+  if (!task?.status) {
+    return (
+      <BasicPageLayout>
+        <div className="w-full flex flex-col pt-12 items-center justify-center">
+          <p className="text-2xl font-bold text-gray-900">Task not found</p>
+          <p className="text-xl text-muted-foreground">
+            Sorry, this task either does not exist or is not public
+          </p>
+        </div>
+      </BasicPageLayout>
     );
   }
 
@@ -119,47 +117,21 @@ export default function TasksPage() {
       </div>
 
       {/* Stats */}
-      {task?.isPublic && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-gray-900">
-              {flattenTasks([task!]).length}
-            </div>
-            <div className="text-gray-600">Total Tasks</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-blue-600">
-              {
-                flattenTasks([task!]).filter(
-                  (task) => task.status === "IN_PROGRESS",
-                ).length
-              }
-            </div>
-            <div className="text-gray-600">In Progress</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-green-600">
-              {
-                flattenTasks([task!]).filter((task) => task.status === "DONE")
-                  .length
-              }
-            </div>
-            <div className="text-gray-600">Completed</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-red-600">
-              {
-                flattenTasks([task!]).filter(
-                  (task) => task.status === "CANCELLED",
-                ).length
-              }
-            </div>
-            <div className="text-gray-600">Cancelled</div>
-          </div>
+      {task?.isPublic && <Dashboard tasks={[task]} />}
+
+      <PublicTasksTable tasks={flattenTasks([task!])} />
+
+      {/* Task Notes Section - Only show if user has access to view task */}
+      {task && (
+        <div className="mt-8">
+          <TaskNotes 
+            task={task} 
+            onNotesUpdate={(notes) => {
+              setTask(prev => prev ? { ...prev, notes } : prev);
+            }}
+          />
         </div>
       )}
-
-      <PublicTasksTable task={task!} />
 
       <ConfirmCloneTaskModal
         open={isCloneModalOpen}

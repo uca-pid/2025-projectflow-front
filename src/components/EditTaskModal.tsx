@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 interface EditTaskModalProps {
   open: boolean;
   onClose: () => void;
-  onUpdateTask: (taskId: string, taskData: Task) => void;
+  onUpdateTask: (task: Task) => void;
   task: Task | null;
 }
 
@@ -62,7 +62,11 @@ export function EditTaskModal({
     } else {
       const deadlineDate = new Date(formData.deadline);
       const now = new Date();
-      if (deadlineDate <= now && formData.status !== "DONE") {
+      if (
+        deadlineDate <= now &&
+        formData.status !== "DONE" &&
+        formData.status !== "CANCELLED"
+      ) {
         newErrors.deadline =
           "Deadline must be in the future for uncompleted tasks";
       }
@@ -77,14 +81,16 @@ export function EditTaskModal({
 
     if (validateForm() && task) {
       const taskData: Partial<Task> = {
+        id: task.id,
         title: formData.title.trim(),
         description: formData.description.trim(),
         deadline: formData.deadline,
         status: formData.status,
         isPublic: formData.isPublic,
+        subTasks: task.subTasks,
       };
 
-      onUpdateTask(task.id, taskData as Task);
+      onUpdateTask(taskData as Task);
       handleClose();
     }
   };
@@ -101,7 +107,7 @@ export function EditTaskModal({
     onClose();
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -199,7 +205,6 @@ export function EditTaskModal({
               type="datetime-local"
               value={formData.deadline}
               onChange={(e) => handleInputChange("deadline", e.target.value)}
-              min={getMinDateTime()}
               className={errors.deadline ? "border-red-500" : ""}
             />
             {errors.deadline && (
@@ -217,8 +222,9 @@ export function EditTaskModal({
             <div className="flex flex-row items-center gap-1">
               <Checkbox
                 id="edit-public"
+                checked={formData.isPublic}
                 onCheckedChange={(checked) =>
-                  handleInputChange("isPublic", checked.toString())
+                  handleInputChange("isPublic", checked)
                 }
               />
               <p className="text-sm">Make this task public</p>

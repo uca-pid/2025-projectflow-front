@@ -1,5 +1,3 @@
-import type { Task } from "@/types/task";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -15,85 +13,36 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import {
-  Clock,
   UserPlus,
-  Check,
-  LoaderCircle,
-  Ban,
   MoreHorizontal,
   Trash2,
   Edit,
   GitBranchPlus,
   ChevronRight,
   ChevronDown,
+  Eye,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  getStatusVariant,
+  getStatusTailwind,
+  getStatusIcon,
+  getStatusLabel,
+  formatDeadline,
+} from "@/lib/task-status-utils";
+import { type Task } from "@/types/task";
 
 type MyTasksTableProps = {
   tasks: Task[];
-  onEditTask?: (task: Task) => void;
-  onDeleteTask?: (task: Task) => void;
-  onAssignTask?: (task: Task) => void;
-  onCreateSubTask?: (task: Task) => void;
+  setSelectedTask: (task: Task) => void;
+  openEditModal?: (open: boolean) => void;
+  openDeleteModal?: (open: boolean) => void;
+  openAssignModal?: (open: boolean) => void;
+  openSubtaskModal?: (open: boolean) => void;
+  openDetailsModal?: (open: boolean) => void;
 };
-
-function getStatusVariant(
-  status: string,
-): "secondary" | "outline" | "destructive" | "default" | undefined {
-  switch (status) {
-    case "DONE":
-      return "secondary";
-    case "IN_PROGRESS":
-      return "default";
-    case "CANCELLED":
-      return "destructive";
-    case "TODO":
-      return "outline";
-    default:
-      return undefined;
-  }
-}
-
-function getStatusTailwind(status: string): string {
-  switch (status) {
-    case "DONE":
-      return "bg-green-100 border border-green-400 text-green-800";
-    case "IN_PROGRESS":
-      return "bg-blue-100 border border-blue-400 text-blue-800";
-    case "CANCELLED":
-      return "bg-red-100 border border-red-400 text-red-800";
-    case "TODO":
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-    default:
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-  }
-}
-
-function formatDeadline(date: Date): string {
-  const now = new Date();
-  const deadline = new Date(date);
-  const diffMs = deadline.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  const formattedDate = deadline.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  if (diffDays < 0) {
-    return `${formattedDate} (Overdue)`;
-  } else if (diffDays === 0) {
-    return `${formattedDate} (Today)`;
-  } else if (diffDays === 1) {
-    return `${formattedDate} (Tomorrow)`;
-  } else {
-    return `${formattedDate} (${diffDays} days)`;
-  }
-}
 
 function TaskRow({
   task,
@@ -104,6 +53,7 @@ function TaskRow({
   onDeleteTask,
   onAssignTask,
   onCreateSubTask,
+  onViewDetails,
 }: {
   task: Task;
   level?: number;
@@ -113,6 +63,7 @@ function TaskRow({
   onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
+  onViewDetails?: (task: Task) => void;
 }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
   const isExpanded = expandedTasks.has(task.id);
@@ -162,30 +113,17 @@ function TaskRow({
             className={getStatusTailwind(task.status)}
             variant={getStatusVariant(task.status)}
           >
-            {task.status === "TODO" && (
-              <>
-                <Clock className="w-3 h-3 mr-1" />
-                Pending
-              </>
-            )}
-            {task.status === "IN_PROGRESS" && (
-              <>
-                <LoaderCircle className="w-3 h-3 mr-1 animate-spin" />
-                In Progress
-              </>
-            )}
-            {task.status === "DONE" && (
-              <>
-                <Check className="w-3 h-3 mr-1" />
-                Completed
-              </>
-            )}
-            {task.status === "CANCELLED" && (
-              <>
-                <Ban className="w-4 h-4 mr-1" />
-                Cancelled
-              </>
-            )}
+            <>
+              {(() => {
+                const StatusIcon = getStatusIcon(task.status);
+                return (
+                  <StatusIcon
+                    className={`w-3 h-3 mr-1 ${task.status === "IN_PROGRESS" && "animate-spin"}`}
+                  />
+                );
+              })()}
+              {getStatusLabel(task.status)}
+            </>
           </Badge>
         </TableCell>
 
@@ -197,6 +135,10 @@ function TaskRow({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => onViewDetails!(task)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Details
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onCreateSubTask!(task)}>
                 <GitBranchPlus className="mr-2 h-4 w-4" />
                 Add Subtask
@@ -234,6 +176,7 @@ function TaskRow({
             onDeleteTask={onDeleteTask}
             onAssignTask={onAssignTask}
             onCreateSubTask={onCreateSubTask}
+            onViewDetails={onViewDetails}
           />
         ))}
     </>
@@ -242,10 +185,12 @@ function TaskRow({
 
 export function MyTasksTable({
   tasks,
-  onEditTask,
-  onDeleteTask,
-  onAssignTask,
-  onCreateSubTask,
+  setSelectedTask,
+  openEditModal,
+  openAssignModal,
+  openSubtaskModal,
+  openDeleteModal,
+  openDetailsModal,
 }: MyTasksTableProps) {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
@@ -268,6 +213,31 @@ export function MyTasksTable({
         <p className="text-gray-400">Create your first task to get started</p>
       </div>
     );
+  }
+
+  function onEditTask(task: Task) {
+    setSelectedTask(task);
+    openEditModal?.(true);
+  }
+
+  function onDeleteTask(task: Task) {
+    setSelectedTask(task);
+    openDeleteModal?.(true);
+  }
+
+  function onAssignTask(task: Task) {
+    setSelectedTask(task);
+    openAssignModal?.(true);
+  }
+
+  function onCreateSubTask(task: Task) {
+    setSelectedTask(task);
+    openSubtaskModal?.(true);
+  }
+
+  function onViewDetails(task: Task) {
+    setSelectedTask(task);
+    openDetailsModal?.(true);
   }
 
   return (
@@ -305,6 +275,7 @@ export function MyTasksTable({
                 onDeleteTask={onDeleteTask}
                 onAssignTask={onAssignTask}
                 onCreateSubTask={onCreateSubTask}
+                onViewDetails={onViewDetails}
               />
             ))}
         </TableBody>

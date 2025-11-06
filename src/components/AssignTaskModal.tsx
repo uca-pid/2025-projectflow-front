@@ -20,18 +20,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Task } from "../types/task";
+import type { User } from "../types/user";
 import { useState, useEffect } from "react";
-import { Copy, Check, X, Ban, Mail, Send, Link } from "lucide-react";
+import { Copy, Check, X, Ban, Mail, Send, Link, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { apiCall } from "@/lib/api-client";
 
 interface AssignTaskModalProps {
   open: boolean;
   onClose: () => void;
   task: Task;
-  onAccept: (task: Task, userId: string) => Promise<void>;
+  onAllow: (task: Task, userId: string, allow: boolean) => Promise<void>;
   onUnassign: (task: Task, userId: string) => Promise<void>;
-  onDecline: (task: Task, userId: string) => Promise<void>;
 }
 
 const ClickHereToCopy = ({ link }: { link: string }) => {
@@ -79,19 +80,41 @@ export const AssignTaskModal = ({
   open,
   onClose,
   task,
-  onAccept,
+  onAllow,
   onUnassign,
-  onDecline,
 }: AssignTaskModalProps) => {
   const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  const link = `${import.meta.env.VITE_FRONT_URL}/apply/${task?.id}`;
+  const [taskWithUsers, setTaskWithUsers] = useState<Task>(task);
 
   useEffect(() => {
-    console.log("Updated task in state:", task);
-  }, [task]);
+    const fetchTaskUsers = async () => {
+      try {
+        const [assignedUsersRes, trackedUsersRes, appliedUsersRes] =
+          await Promise.all([
+            apiCall("GET", `/task/${task.id}/assigned`),
+            apiCall("GET", `/task/${task.id}/tracked`),
+            apiCall("GET", `/task/${task.id}/applied`),
+          ]);
+
+        setTaskWithUsers({
+          ...task,
+          assignedUsers: (assignedUsersRes?.data as User[]) || [],
+          trackedUsers: (trackedUsersRes?.data as User[]) || [],
+          appliedUsers: (appliedUsersRes?.data as User[]) || [],
+        });
+      } catch (error) {
+        console.error("Error fetching task users:", error);
+      }
+    };
+
+    if (task?.id) {
+      fetchTaskUsers();
+    }
+  }, [task, open]);
+
+  const link = `${import.meta.env.VITE_FRONT_URL}/${task?.isPublic ? "task" : "apply"}/${task?.id}`;
 
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +123,7 @@ export const AssignTaskModal = ({
       toast.error("Please enter an email address");
       return;
     }
-    //Esto es temporal
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast.error("Please enter a valid email address");
@@ -112,7 +135,7 @@ export const AssignTaskModal = ({
       return;
     }
 
-    if (task?.assignedUsers?.some((u) => u.email === email)) {
+    if (taskWithUsers?.assignedUsers?.some((u) => u.email === email)) {
       toast.error("This user is already assigned to this task");
       return;
     }
@@ -120,27 +143,17 @@ export const AssignTaskModal = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/task/${task.id}/invite`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email: email.trim() }),
-        },
-      );
+      const response = await apiCall("POST", `/task/${task.id}/invite`, {
+        email: email.trim(),
+      });
 
-      if (response.ok) {
+      if (response.success) {
         toast.success(
           `Invitation email sent to ${email}! They can join using this email.`,
         );
-
         setEmail("");
       } else {
-        const error = await response.json();
-        toast.error(error.message || "Failed to send invitation");
+        toast.error("Failed to send invitation");
       }
     } catch (error) {
       console.error("Error inviting user:", error);
@@ -212,7 +225,10 @@ export const AssignTaskModal = ({
                   <div className="flex items-center gap-2">
                     <Link className="h-4 w-4" />
                     <Label className="text-sm font-medium">
-                      Or share this link to invite viewers:
+                      {task?.isPublic
+                        ? "Your task is public, everyone can see it with this link"
+                        : "Or share this link to invite viewers"}
+                      :
                     </Label>
                   </div>
                   <ClickHereToCopy link={link} />
@@ -256,28 +272,18 @@ export const AssignTaskModal = ({
                         Owner
                       </span>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      <Button
-                        variant="ghost"
-                        title="We Support Israel"
-                        className="hover:bg-gray-50"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 464 512"
-                          className="text-blue-500"
-                          fill="currentColor"
-                        >
-                          <path d="M405.68 256l53.21-89.39C473.3 142.4 455.48 112 426.88 112H319.96l-55.95-93.98C256.86 6.01 244.43 0 232 0s-24.86 6.01-32.01 18.02L144.04 112H37.11c-28.6 0-46.42 30.4-32.01 54.61L58.32 256 5.1 345.39C-9.31 369.6 8.51 400 37.11 400h106.93l55.95 93.98C207.14 505.99 219.57 512 232 512s24.86-6.01 32.01-18.02L319.96 400h106.93c28.6 0 46.42-30.4 32.01-54.61L405.68 256zm-12.78-88l-19.8 33.26L353.3 168h39.6zm-52.39 88l-52.39 88H175.88l-52.39-88 52.38-88h112.25l52.39 88zM232 73.72L254.79 112h-45.57L232 73.72zM71.1 168h39.6l-19.8 33.26L71.1 168zm0 176l19.8-33.26L110.7 344H71.1zM232 438.28L209.21 400h45.57L232 438.28zM353.29 344l19.8-33.26L392.9 344h-39.61z" />
-                        </svg>
-                      </Button>
+                    <TableCell
+                      title="The Creator"
+                      className="flex font-medium justify-center"
+                    >
+                      <Crown className="h-4 w-4 mr-2" />
                     </TableCell>
                   </TableRow>
                 )}
 
-                {task?.assignedUsers?.map(
+                {taskWithUsers?.assignedUsers?.map(
                   (user) =>
-                    user.id !== task?.creatorId && (
+                    user.id !== taskWithUsers?.creatorId && (
                       <TableRow key={user.id}>
                         <TableCell className="flex flex-row items-center">
                           <Avatar className="w-8 h-8">
@@ -296,21 +302,20 @@ export const AssignTaskModal = ({
                             Assigned
                           </span>
                         </TableCell>
-                        <TableCell className="font-medium">
-                          <Button
-                            variant="ghost"
-                            title="Unassign"
-                            // <CHANGE> Now calling onUnassign prop
-                            onClick={() => onUnassign(task, user.id!)}
-                          >
-                            <Ban className="text-red-600" />
-                          </Button>
+                        <TableCell
+                          title="Unassign"
+                          className="font-medium flex justify-center"
+                        >
+                          <Ban
+                            className="h-4 w-4 mr-2 text-red-600 hover:cursor-pointer"
+                            onClick={() => onUnassign(taskWithUsers, user.id!)}
+                          />
                         </TableCell>
                       </TableRow>
                     ),
                 )}
 
-                {task?.trackedUsers?.map((user) => (
+                {taskWithUsers?.trackedUsers?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="flex flex-row items-center">
                       <Avatar className="w-8 h-8">
@@ -325,37 +330,20 @@ export const AssignTaskModal = ({
                         Viewer
                       </span>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {user.id === task?.creatorId ? (
-                        <Button
-                          variant="ghost"
-                          title="We Support Israel"
-                          className="hover:bg-gray-50"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 464 512"
-                            className="text-blue-500"
-                            fill="currentColor"
-                          >
-                            <path d="M405.68 256l53.21-89.39C473.3 142.4 455.48 112 426.88 112H319.96l-55.95-93.98C256.86 6.01 244.43 0 232 0s-24.86 6.01-32.01 18.02L144.04 112H37.11c-28.6 0-46.42 30.4-32.01 54.61L58.32 256 5.1 345.39C-9.31 369.6 8.51 400 37.11 400h106.93l55.95 93.98C207.14 505.99 219.57 512 232 512s24.86-6.01 32.01-18.02L319.96 400h106.93c28.6 0 46.42-30.4 32.01-54.61L405.68 256zm-12.78-88l-19.8 33.26L353.3 168h39.6zm-52.39 88l-52.39 88H175.88l-52.39-88 52.38-88h112.25l52.39 88zM232 73.72L254.79 112h-45.57L232 73.72zM71.1 168h39.6l-19.8 33.26L71.1 168zm0 176l19.8-33.26L110.7 344H71.1zM232 438.28L209.21 400h45.57L232 438.28zM353.29 344l19.8-33.26L392.9 344h-39.61z" />
-                          </svg>
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          title="Unassign"
-                          onClick={() => onUnassign(task, user.id!)}
-                        >
-                          <Ban className="text-red-600" />
-                        </Button>
-                      )}
+                    <TableCell
+                      title="Unassign"
+                      className="font-medium flex justify-center"
+                    >
+                      <Ban
+                        className="h-4 w-4 mr-2 text-red-600 hover:cursor-pointer"
+                        onClick={() => onUnassign(taskWithUsers, user.id!)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
 
                 {/* Applied Users */}
-                {task?.appliedUsers?.map((user) => (
+                {taskWithUsers?.appliedUsers?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="flex flex-row items-center">
                       <Avatar className="w-8 h-8">
@@ -375,7 +363,7 @@ export const AssignTaskModal = ({
                         <Button
                           variant="ghost"
                           title="Accept"
-                          onClick={() => onAccept(task, user.id!)}
+                          onClick={() => onAllow(taskWithUsers, user.id!, true)}
                         >
                           <Check className="text-green-600" />
                         </Button>
@@ -383,7 +371,9 @@ export const AssignTaskModal = ({
                           variant="ghost"
                           title="Decline"
                           // <CHANGE> Now calling onDecline prop
-                          onClick={() => onDecline(task, user.id!)}
+                          onClick={() =>
+                            onAllow(taskWithUsers, user.id!, false)
+                          }
                         >
                           <X className="text-red-600" />
                         </Button>
@@ -392,9 +382,9 @@ export const AssignTaskModal = ({
                   </TableRow>
                 ))}
 
-                {!task?.appliedUsers?.length &&
-                  !task?.assignedUsers?.length &&
-                  !task?.trackedUsers?.length && (
+                {!taskWithUsers?.appliedUsers?.length &&
+                  !taskWithUsers?.assignedUsers?.length &&
+                  !taskWithUsers?.trackedUsers?.length && (
                     <TableRow>
                       <TableCell
                         className="font-medium text-center text-gray-500"

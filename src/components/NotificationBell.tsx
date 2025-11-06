@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import type { Invitation } from "@/types/invitation";
+import { apiCall } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export const NotificationBell = () => {
@@ -17,32 +18,21 @@ export const NotificationBell = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/user/invites`, {
-      method: "GET",
-      credentials: "include",
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.data) {
-          setInvitations(data.data);
-        }
-        setIsLoading(false);
-      });
+    apiCall("GET", "/user/invites").then((response) => {
+      if (response.data) {
+        setInvitations(response.data as Invitation[]);
+      }
+      setIsLoading(false);
+    });
   }, []);
 
   const acceptInvitation = async (invitation: Invitation) => {
     setIsProcessing(true);
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/task/${invitation.taskId}/accept`,
-      {
-        method: "POST",
-        credentials: "include",
-      },
-    );
+    const response = await apiCall("POST", `/task/${invitation.taskId}/accept`);
 
     setIsProcessing(false);
 
-    if (!response.ok) {
+    if (!response.success) {
       toast.error("Failed to accept invitation");
       throw new Error("Failed to accept invitation");
     }
@@ -53,21 +43,16 @@ export const NotificationBell = () => {
         (invite) => invite.invitationId !== invitation.invitationId,
       ),
     );
+    document.location.reload();
   };
 
   const declineInvitation = async (invitation: Invitation) => {
     setIsProcessing(true);
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/task/${invitation.taskId}/reject`,
-      {
-        method: "POST",
-        credentials: "include",
-      },
-    );
+    const response = await apiCall("POST", `/task/${invitation.taskId}/reject`);
 
     setIsProcessing(false);
 
-    if (!response.ok) {
+    if (!response.success) {
       toast.error("Failed to decline invitation");
       throw new Error("Failed to decline invitation");
     }
@@ -163,4 +148,3 @@ export const NotificationBell = () => {
     </Popover>
   );
 };
-

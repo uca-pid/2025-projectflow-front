@@ -18,59 +18,18 @@ import {
 } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useState, useEffect } from "react";
+import { getStatusTailwind, formatDeadline } from "@/lib/task-status-utils";
 
-type MyTasksKanbanProps = {
+type AssignedTasksKanbanProps = {
   tasks: Task[];
-  onDeleteTask?: (taskId: string) => void;
-  onAssignTask?: (task: Task) => void;
-  onComplete?: (taskId: string) => void;
-  onStart?: (taskId: string) => void;
-  onPause?: (taskId: string) => void;
-  onCancel?: (taskId: string) => void;
+  setSelectedTask: (task: Task | null) => void;
+  openDeleteModal?: (open: boolean) => void;
+  openAssignModal?: (open: boolean) => void;
+  updateTask?: (task: Task) => Promise<void>;
 };
-
-function getStatusTailwind(status: string): string {
-  switch (status) {
-    case "DONE":
-      return "bg-green-100 border border-green-400 text-green-800";
-    case "IN_PROGRESS":
-      return "bg-blue-100 border border-blue-400 text-blue-800";
-    case "CANCELLED":
-      return "bg-red-100 border border-red-400 text-red-800";
-    case "TODO":
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-    default:
-      return "bg-gray-100 border border-gray-400 text-gray-800";
-  }
-}
 
 function isBlockedTask(task: Task): boolean {
   return task.status === "DONE" || task.status === "CANCELLED";
-}
-
-function formatDeadline(date: Date): string {
-  const now = new Date();
-  const deadline = new Date(date);
-  const diffMs = deadline.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  const formattedDate = deadline.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  if (diffDays < 0) {
-    return `${formattedDate} (Overdue)`;
-  } else if (diffDays === 0) {
-    return `${formattedDate} (Today)`;
-  } else if (diffDays === 1) {
-    return `${formattedDate} (Tomorrow)`;
-  } else {
-    return `${formattedDate} (${diffDays} days)`;
-  }
 }
 
 function TaskCard({
@@ -78,7 +37,7 @@ function TaskCard({
   isDragging = false,
 }: {
   task: Task;
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   isDragging?: boolean;
 }) {
@@ -163,7 +122,7 @@ function KanbanColumn({
   title: string;
   status: string;
   tasks: Task[];
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (task: Task) => void;
   onAssignTask?: (task: Task) => void;
   activeTaskId?: string | null;
 }) {
@@ -211,13 +170,11 @@ function KanbanColumn({
 
 export function AssignedTasksKanban({
   tasks = [],
-  onDeleteTask,
-  onAssignTask,
-  onComplete,
-  onStart,
-  onPause,
-  onCancel,
-}: MyTasksKanbanProps) {
+  setSelectedTask,
+  openDeleteModal,
+  openAssignModal,
+  updateTask,
+}: AssignedTasksKanbanProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
@@ -253,7 +210,6 @@ export function AssignedTasksKanban({
 
     if (!over) return;
 
-    const taskId = active.id as string;
     const task = active.data.current?.task as Task;
     const newStatus = over.id as string;
 
@@ -261,15 +217,17 @@ export function AssignedTasksKanban({
     if (task.status === newStatus) return;
 
     // Call the appropriate callback based on the new status
-    if (newStatus === "DONE" && onComplete) {
-      onComplete(taskId);
-    } else if (newStatus === "IN_PROGRESS" && onStart) {
-      onStart(taskId);
-    } else if (newStatus === "TODO" && onPause) {
-      onPause(taskId);
-    } else if (newStatus === "CANCELLED" && onCancel) {
-      onCancel(taskId);
-    }
+    updateTask?.({ ...task, status: newStatus });
+  }
+
+  function onDeleteTask(task: Task) {
+    setSelectedTask(task);
+    openDeleteModal?.(true);
+  }
+
+  function onAssignTask(task: Task) {
+    setSelectedTask(task);
+    openAssignModal?.(true);
   }
 
   if (tasks.length === 0) {
