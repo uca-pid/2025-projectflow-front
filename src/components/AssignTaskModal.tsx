@@ -20,7 +20,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Task } from "../types/task";
-import { useState } from "react";
+import type { User } from "../types/user";
+import { useState, useEffect } from "react";
 import { Copy, Check, X, Ban, Mail, Send, Link, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -85,6 +86,33 @@ export const AssignTaskModal = ({
   const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [taskWithUsers, setTaskWithUsers] = useState<Task>(task);
+
+  useEffect(() => {
+    const fetchTaskUsers = async () => {
+      try {
+        const [assignedUsersRes, trackedUsersRes, appliedUsersRes] =
+          await Promise.all([
+            apiCall("GET", `/task/${task.id}/assigned`),
+            apiCall("GET", `/task/${task.id}/tracked`),
+            apiCall("GET", `/task/${task.id}/applied`),
+          ]);
+
+        setTaskWithUsers({
+          ...task,
+          assignedUsers: (assignedUsersRes?.data as User[]) || [],
+          trackedUsers: (trackedUsersRes?.data as User[]) || [],
+          appliedUsers: (appliedUsersRes?.data as User[]) || [],
+        });
+      } catch (error) {
+        console.error("Error fetching task users:", error);
+      }
+    };
+
+    if (task?.id) {
+      fetchTaskUsers();
+    }
+  }, [task, open]);
 
   const link = `${import.meta.env.VITE_FRONT_URL}/${task?.isPublic ? "task" : "apply"}/${task?.id}`;
 
@@ -107,7 +135,7 @@ export const AssignTaskModal = ({
       return;
     }
 
-    if (task?.assignedUsers?.some((u) => u.email === email)) {
+    if (taskWithUsers?.assignedUsers?.some((u) => u.email === email)) {
       toast.error("This user is already assigned to this task");
       return;
     }
@@ -253,9 +281,9 @@ export const AssignTaskModal = ({
                   </TableRow>
                 )}
 
-                {task?.assignedUsers?.map(
+                {taskWithUsers?.assignedUsers?.map(
                   (user) =>
-                    user.id !== task?.creatorId && (
+                    user.id !== taskWithUsers?.creatorId && (
                       <TableRow key={user.id}>
                         <TableCell className="flex flex-row items-center">
                           <Avatar className="w-8 h-8">
@@ -280,14 +308,14 @@ export const AssignTaskModal = ({
                         >
                           <Ban
                             className="h-4 w-4 mr-2 text-red-600 hover:cursor-pointer"
-                            onClick={() => onUnassign(task, user.id!)}
+                            onClick={() => onUnassign(taskWithUsers, user.id!)}
                           />
                         </TableCell>
                       </TableRow>
                     ),
                 )}
 
-                {task?.trackedUsers?.map((user) => (
+                {taskWithUsers?.trackedUsers?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="flex flex-row items-center">
                       <Avatar className="w-8 h-8">
@@ -308,14 +336,14 @@ export const AssignTaskModal = ({
                     >
                       <Ban
                         className="h-4 w-4 mr-2 text-red-600 hover:cursor-pointer"
-                        onClick={() => onUnassign(task, user.id!)}
+                        onClick={() => onUnassign(taskWithUsers, user.id!)}
                       />
                     </TableCell>
                   </TableRow>
                 ))}
 
                 {/* Applied Users */}
-                {task?.appliedUsers?.map((user) => (
+                {taskWithUsers?.appliedUsers?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="flex flex-row items-center">
                       <Avatar className="w-8 h-8">
@@ -335,7 +363,7 @@ export const AssignTaskModal = ({
                         <Button
                           variant="ghost"
                           title="Accept"
-                          onClick={() => onAllow(task, user.id!, true)}
+                          onClick={() => onAllow(taskWithUsers, user.id!, true)}
                         >
                           <Check className="text-green-600" />
                         </Button>
@@ -343,7 +371,9 @@ export const AssignTaskModal = ({
                           variant="ghost"
                           title="Decline"
                           // <CHANGE> Now calling onDecline prop
-                          onClick={() => onAllow(task, user.id!, false)}
+                          onClick={() =>
+                            onAllow(taskWithUsers, user.id!, false)
+                          }
                         >
                           <X className="text-red-600" />
                         </Button>
@@ -352,9 +382,9 @@ export const AssignTaskModal = ({
                   </TableRow>
                 ))}
 
-                {!task?.appliedUsers?.length &&
-                  !task?.assignedUsers?.length &&
-                  !task?.trackedUsers?.length && (
+                {!taskWithUsers?.appliedUsers?.length &&
+                  !taskWithUsers?.assignedUsers?.length &&
+                  !taskWithUsers?.trackedUsers?.length && (
                     <TableRow>
                       <TableCell
                         className="font-medium text-center text-gray-500"

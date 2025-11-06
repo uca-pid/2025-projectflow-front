@@ -7,8 +7,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { TaskNotes } from "@/components/TaskNotes";
+import { TaskObjectives } from "@/components/TaskObjectives";
 import { Calendar, User, Users, Clock, Target } from "lucide-react";
-import { type Task, type Note } from "@/types/task";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { type Task, type Note, type Objective } from "@/types/task";
 import { getStatusVariant } from "@/lib/task-status-utils";
 import { apiCall } from "@/lib/api-client";
 
@@ -19,28 +21,34 @@ interface TaskDetailModalProps {
 }
 
 export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
-  const [taskWithNotes, setTaskWithNotes] = useState<Task | null>(null);
+  const [enrichedTask, setEnrichedTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchTaskNotes = async () => {
       if (!task || !open) {
-        setTaskWithNotes(null);
+        setEnrichedTask(null);
         return;
       }
 
       setLoading(true);
       try {
         const notesResponse = await apiCall("GET", `/task/${task.id}/notes`);
-        setTaskWithNotes({
+        const objectivesResponse = await apiCall(
+          "GET",
+          `/task/${task.id}/objectives`,
+        );
+        setEnrichedTask({
           ...task,
           notes: (notesResponse?.data as Note[]) || [],
+          objectives: (objectivesResponse?.data as Objective[]) || [],
         });
       } catch (error) {
         console.warn("Could not fetch notes:", error);
-        setTaskWithNotes({
+        setEnrichedTask({
           ...task,
           notes: [],
+          objectives: [],
         });
       } finally {
         setLoading(false);
@@ -50,7 +58,7 @@ export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
     fetchTaskNotes();
   }, [task, open]);
 
-  if (!taskWithNotes) {
+  if (!enrichedTask) {
     return null;
   }
 
@@ -64,15 +72,15 @@ export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className=" min-w-1/3 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            <span className="text-xl font-bold">{taskWithNotes.title}</span>
+            <span className="text-xl font-bold">{enrichedTask.title}</span>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid flex-row w-full justify-between grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
@@ -80,7 +88,7 @@ export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
                   Description
                 </h3>
                 <p className="text-gray-800 bg-gray-50 p-3 rounded-lg">
-                  {taskWithNotes.description || "No description provided"}
+                  {enrichedTask.description || "No description provided"}
                 </p>
               </div>
 
@@ -89,8 +97,8 @@ export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
                   <Clock className="h-4 w-4" />
                   Status
                 </h3>
-                <Badge variant={getStatusVariant(taskWithNotes.status)}>
-                  {taskWithNotes.status}
+                <Badge variant={getStatusVariant(enrichedTask.status)}>
+                  {enrichedTask.status}
                 </Badge>
               </div>
 
@@ -100,7 +108,7 @@ export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
                   Creator
                 </h3>
                 <p className="text-gray-800">
-                  {taskWithNotes.creator?.name || "Unknown"}
+                  {enrichedTask.creator?.name || "Unknown"}
                 </p>
               </div>
             </div>
@@ -112,7 +120,7 @@ export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
                   Deadline
                 </h3>
                 <p className="text-gray-800">
-                  {formatDate(taskWithNotes.deadline)}
+                  {formatDate(enrichedTask.deadline)}
                 </p>
               </div>
 
@@ -121,27 +129,28 @@ export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
                   Created
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  {formatDate(taskWithNotes.createdAt)}
+                  {formatDate(enrichedTask.createdAt)}
                 </p>
               </div>
 
-              {taskWithNotes.assignedUsers && taskWithNotes.assignedUsers.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Assigned Users
-                  </h3>
-                  <div className="space-y-1">
-                    {taskWithNotes.assignedUsers.map((user, index) => (
-                      <p key={index} className="text-sm text-gray-600">
-                        {user.name || "Unknown User"}
-                      </p>
-                    ))}
+              {enrichedTask.assignedUsers &&
+                enrichedTask.assignedUsers.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Assigned Users
+                    </h3>
+                    <div className="space-y-1 max-h-[60px] overflow-y-auto">
+                      {enrichedTask.assignedUsers.map((user, index) => (
+                        <p key={index} className="text-sm text-gray-600">
+                          {user.name || "Unknown User"}
+                        </p>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {taskWithNotes.isPublic && (
+              {enrichedTask.isPublic && (
                 <div>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700">
                     Public Task
@@ -151,13 +160,13 @@ export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
             </div>
           </div>
 
-          {taskWithNotes.subTasks && taskWithNotes.subTasks.length > 0 && (
+          {enrichedTask.subTasks && enrichedTask.subTasks.length > 0 && (
             <div>
               <h3 className="font-semibold text-gray-700 mb-3">
-                Subtasks ({taskWithNotes.subTasks.length})
+                Subtasks ({enrichedTask.subTasks.length})
               </h3>
               <div className="space-y-2">
-                {taskWithNotes.subTasks.map((subTask, index) => (
+                {enrichedTask.subTasks.map((subTask, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 bg-gray-50 rounded"
@@ -173,17 +182,31 @@ export function TaskDetailModal({ open, onClose, task }: TaskDetailModalProps) {
           )}
 
           {loading ? (
-            <div className="text-center py-4">Loading notes...</div>
+            <div className="text-center py-4">Loading more details...</div>
           ) : (
-            <TaskNotes
-              task={taskWithNotes}
-              onNotesUpdate={(notes) => {
-                setTaskWithNotes(prev => prev ? { ...prev, notes } : prev);
-              }}
-            />
+            <Tabs defaultValue="notes">
+              <TabsList>
+                <TabsTrigger value="notes">Notes</TabsTrigger>
+                <TabsTrigger value="objectives">Objectives</TabsTrigger>
+              </TabsList>
+              <TabsContent value="notes">
+                <TaskNotes
+                  task={enrichedTask}
+                  onNotesUpdate={(notes) => {
+                    setEnrichedTask((prev) =>
+                      prev ? { ...prev, notes } : prev,
+                    );
+                  }}
+                />
+              </TabsContent>
+              <TabsContent value="objectives">
+                <TaskObjectives task={enrichedTask} />
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+

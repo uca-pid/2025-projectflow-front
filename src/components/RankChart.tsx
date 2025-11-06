@@ -19,9 +19,6 @@ import { type Task } from "@/types/task";
 import { type User } from "@/types/user";
 
 export const RankChart = ({ tasks }: { tasks: Task[] }) => {
-  // Create a stable key based on task completion data
-  const tasksKey = tasks.map((t) => `${t.id}-${t.completedById}`).join(",");
-
   const userScores = useMemo(() => {
     const scoresMap = new Map<
       string,
@@ -48,7 +45,8 @@ export const RankChart = ({ tasks }: { tasks: Task[] }) => {
         ...data,
       }))
       .sort((a, b) => b.score - a.score);
-  }, [tasksKey]);
+    // PLEASE REMOVE THIS NEGRAD SOON
+  }, [tasks, tasks.filter((task) => task.completedById).length]);
 
   return (
     <Card className="flex flex-col w-full">

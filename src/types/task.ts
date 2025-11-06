@@ -11,6 +11,14 @@ export interface Note {
   taskId: string;
 }
 
+export interface Objective {
+  objectiveId: string;
+  taskId: string;
+  objective: string;
+  taskGoal: number;
+  period: "DAY" | "WEEK" | "MONTH" | "YEAR";
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -32,6 +40,7 @@ export interface Task {
   parentTask: Partial<Task> | null;
   subTasks: Partial<Task>[];
   notes?: Note[];
+  objectives?: Objective[];
 }
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";

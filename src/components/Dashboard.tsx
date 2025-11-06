@@ -124,7 +124,7 @@ const Dashboard = ({
           <AccordionItem value="tron">
             <AccordionTrigger className="w-full flex justify-center">
               <h1 className=" text-l font-bold text-muted-foreground text-center">
-                More
+                {advanced === "tron" ? "Show Less" : "Show More"}
               </h1>
             </AccordionTrigger>
             <AccordionContent className="flex flex-row justify-center gap-3">
