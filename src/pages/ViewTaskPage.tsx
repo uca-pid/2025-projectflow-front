@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import LoadingPage from "./LoadingPage";
-import { type Task } from "@/types/task";
+import { type Task, type Note } from "@/types/task";
 import { CopyPlus, Check } from "lucide-react";
 import { PublicTasksTable } from "@/components/PublicTasksTable";
+import { TaskNotes } from "@/components/TaskNotes";
 import { ConfirmCloneTaskModal } from "@/components/ConfirmCloneTaskModal";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
@@ -23,16 +24,31 @@ export default function ViewTaskPage() {
 
   // Fetch and load tasks
   useEffect(() => {
-    try {
-      apiCall("GET", `/task/${taskId}`).then((response) => {
-        setTask(response?.data as Task);
-      });
-    } catch (error) {
-      setError(true);
-      console.error("Error fetching task:", error);
-    } finally {
-      setLoading(false);
-    }
+    const fetchTaskWithNotes = async () => {
+      try {
+        const response = await apiCall("GET", `/task/${taskId}`);
+        const taskData = response?.data as Task;
+        
+        if (taskData) {
+          try {
+            const notesResponse = await apiCall("GET", `/task/${taskId}/notes`);
+            taskData.notes = (notesResponse?.data as Note[]) || [];
+          } catch (notesError) {
+            console.warn("Could not fetch notes (user might not have access):", notesError);
+            taskData.notes = [];
+          }
+        }
+        
+        setTask(taskData);
+      } catch (error) {
+        setError(true);
+        console.error("Error fetching task:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTaskWithNotes();
   }, [taskId]);
 
   const handleClone = async () => {
@@ -141,6 +157,18 @@ export default function ViewTaskPage() {
       )}
 
       <PublicTasksTable tasks={flattenTasks([task!])} />
+
+      {/* Task Notes Section - Only show if user has access to view task */}
+      {task && (
+        <div className="mt-8">
+          <TaskNotes 
+            task={task} 
+            onNotesUpdate={(notes) => {
+              setTask(prev => prev ? { ...prev, notes } : prev);
+            }}
+          />
+        </div>
+      )}
 
       <ConfirmCloneTaskModal
         open={isCloneModalOpen}
