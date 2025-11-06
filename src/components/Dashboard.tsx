@@ -6,14 +6,20 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { TasksViewSelector } from "@/components/TasksViewSelector";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { PieChart } from "@/components/PieChart";
 import { BarChart } from "@/components/BarChart";
 import { RankChart } from "@/components/RankChart";
 
-import { flattenTasks } from "@/lib/task-utils";
+import { flattenTasks, tasksToCsv } from "@/lib/task-utils";
 
-import { Plus } from "lucide-react";
+import { Plus, Funnel, FileSpreadsheet } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface DashboardProps {
@@ -34,11 +40,29 @@ const Dashboard = ({
   openCreateModal,
 }: DashboardProps) => {
   const [advanced, setAdvanced] = useState<string>("");
+  const [filter, setFilter] = useState<string>("All");
 
   useEffect(() => {
     const viewType = localStorage.getItem("advancedDashboard") || "";
     setAdvanced(viewType as ViewType);
   }, []);
+
+  function filterTasks(tasks: Task[], filter: string): Task[] {
+    switch (filter) {
+      case "This Month":
+        return tasks.filter(
+          (task) =>
+            new Date(task.createdAt).getMonth() === new Date().getMonth(),
+        );
+      case "Last Month":
+        return tasks.filter(
+          (task) =>
+            new Date(task.createdAt).getMonth() === new Date().getMonth() - 1,
+        );
+      default:
+        return tasks;
+    }
+  }
 
   return (
     <>
@@ -73,7 +97,6 @@ const Dashboard = ({
           </div>
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="text-2xl font-bold text-gray-900">
@@ -110,7 +133,6 @@ const Dashboard = ({
           <div className="text-gray-600">Cancelled</div>
         </div>
       </div>
-
       {showGraphs ? (
         <Accordion
           type="single"
@@ -121,17 +143,71 @@ const Dashboard = ({
             setAdvanced(value);
           }}
         >
-          <AccordionItem value="tron">
+          <AccordionItem value="tron" className="relative">
             <AccordionTrigger className="w-full flex justify-center">
               <h1 className=" text-l font-bold text-muted-foreground text-center">
                 {advanced === "tron" ? "Show Less" : "Show More"}
               </h1>
             </AccordionTrigger>
             <AccordionContent className="flex flex-row justify-center gap-3">
-              <PieChart tasks={flattenTasks(tasks)} />
-              <RankChart tasks={flattenTasks(tasks)} />
-              <BarChart tasks={flattenTasks(tasks)} />
+              <PieChart
+                tasks={flattenTasks(filterTasks(tasks, filter))}
+                period={filter}
+              />
+              <RankChart
+                tasks={flattenTasks(filterTasks(tasks, filter))}
+                period={filter}
+              />
+              <BarChart
+                tasks={flattenTasks(filterTasks(tasks, filter))}
+                period={filter}
+              />
             </AccordionContent>
+            <div
+              className="absolute -bottom-8 right-12 translate-x-1/2"
+              hidden={advanced !== "tron"}
+            >
+              <Button
+                onClick={() => {
+                  tasksToCsv(flattenTasks(filterTasks(tasks, filter)));
+                }}
+                title="Exportar"
+                className="mr-2"
+                variant="outline"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <Button title="Filter">
+                    <Funnel className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilter("All");
+                    }}
+                  >
+                    All
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilter("This Month");
+                    }}
+                  >
+                    This Month
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilter("Last Month");
+                    }}
+                  >
+                    Last Month
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </AccordionItem>
         </Accordion>
       ) : (

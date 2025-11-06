@@ -145,3 +145,34 @@ export async function validateTaskUpdate(
 
   return { valid: true, message: "Task update is valid" };
 }
+
+export function tasksToCsv(tasks: Task[]) {
+  const transformed = tasks.map((t) => ({
+    Title: t.title,
+    Description: t.description,
+    Status: t.status,
+    "Created At": t.createdAt,
+    Deadline: t.deadline,
+    Creator: t.creator?.name ?? "",
+    "Completed By": t.completedBy?.name ?? "",
+    "parent Task": t.parentTask?.title ?? "",
+    "Assigned Users": t.assignedUsers?.length ?? 0,
+    "Tracked Users": t.trackedUsers?.length ?? 0,
+    "Applied Users": t.appliedUsers?.length ?? 0,
+  }));
+
+  const header = Object.keys(transformed[0]).join(",");
+  const rows = transformed.map((obj) =>
+    Object.values(obj)
+      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .join(","),
+  );
+
+  const csvContent = [header, ...rows].join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "Tasks.csv";
+  link.click();
+}

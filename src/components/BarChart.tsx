@@ -33,7 +33,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function BarChart({ tasks }: { tasks: Task[] }) {
+export function BarChart({ tasks, period }: { tasks: Task[]; period: string }) {
   const now = new Date();
 
   // Categorize tasks by deadline status
@@ -100,7 +100,7 @@ export function BarChart({ tasks }: { tasks: Task[] }) {
     <Card className="flex flex-col w-full">
       <CardHeader className="items-center pb-0">
         <CardTitle>Task Deadlines</CardTitle>
-        <CardDescription></CardDescription>
+        <CardDescription>{period}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         {tasks.length === 0 ? (

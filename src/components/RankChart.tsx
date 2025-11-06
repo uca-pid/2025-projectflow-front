@@ -18,7 +18,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { type Task } from "@/types/task";
 import { type User } from "@/types/user";
 
-export const RankChart = ({ tasks }: { tasks: Task[] }) => {
+export const RankChart = ({
+  tasks,
+  period,
+}: {
+  tasks: Task[];
+  period: string;
+}) => {
   const userScores = useMemo(() => {
     const scoresMap = new Map<
       string,
@@ -52,7 +58,7 @@ export const RankChart = ({ tasks }: { tasks: Task[] }) => {
     <Card className="flex flex-col w-full">
       <CardHeader className="items-center pb-0">
         <CardTitle>User Task Completions</CardTitle>
-        <CardDescription></CardDescription>
+        <CardDescription>{period}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0 min-h-[200px]">
         <Table>

@@ -37,7 +37,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function PieChart({ tasks }: { tasks: Task[] }) {
+export function PieChart({ tasks, period }: { tasks: Task[]; period: string }) {
   const chartData = Object.entries(
     tasks?.reduce<Record<TaskStatus, number>>(
       (acc, task) => {
@@ -61,7 +61,7 @@ export function PieChart({ tasks }: { tasks: Task[] }) {
     <Card className="flex flex-col w-full">
       <CardHeader className="items-center pb-0">
         <CardTitle>Task Status </CardTitle>
-        <CardDescription></CardDescription>
+        <CardDescription>{period}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         {tasks.length === 0 && (
