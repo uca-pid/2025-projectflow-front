@@ -28,7 +28,10 @@ export const NotificationBell = () => {
 
   const acceptInvitation = async (invitation: Invitation) => {
     setIsProcessing(true);
-    const response = await apiCall("POST", `/task/${invitation.taskId}/accept`);
+    const response = await apiCall(
+      "POST",
+      `/task/${invitation.taskId}/acceptInvitation`,
+    );
 
     setIsProcessing(false);
 
@@ -48,7 +51,10 @@ export const NotificationBell = () => {
 
   const declineInvitation = async (invitation: Invitation) => {
     setIsProcessing(true);
-    const response = await apiCall("POST", `/task/${invitation.taskId}/reject`);
+    const response = await apiCall(
+      "POST",
+      `/task/${invitation.taskId}/rejectInvitation`,
+    );
 
     setIsProcessing(false);
 

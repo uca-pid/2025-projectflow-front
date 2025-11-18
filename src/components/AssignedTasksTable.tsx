@@ -1,4 +1,4 @@
-import type { Task } from "@/types/task";
+import type { Task, TaskStatus } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -223,23 +223,23 @@ export function AssignedTasksTable({
   }
 
   async function onCancelTask(task: Task) {
-    const updatedTask = { ...task, status: "CANCELLED" };
+    const updatedTask = { ...task, status: "CANCELLED" as TaskStatus };
     if (!updateTask) console.log("updateTask is undefined");
     await updateTask(updatedTask);
   }
 
   async function onStartTask(task: Task) {
-    const updatedTask = { ...task, status: "IN_PROGRESS" };
+    const updatedTask = { ...task, status: "IN_PROGRESS" as TaskStatus };
     await updateTask(updatedTask);
   }
 
   async function onPauseTask(task: Task) {
-    const updatedTask = { ...task, status: "TODO" };
+    const updatedTask = { ...task, status: "TODO" as TaskStatus };
     await updateTask(updatedTask);
   }
 
   async function onCompleteTask(task: Task) {
-    const updatedTask = { ...task, status: "DONE" };
+    const updatedTask = { ...task, status: "DONE" as TaskStatus };
     await updateTask(updatedTask);
   }
 

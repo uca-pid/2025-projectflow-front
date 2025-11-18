@@ -16,7 +16,7 @@ import { AssignedTasksKanban } from "@/components/AssignedTasksKanban";
 import AssignedTreeGraph from "@/components/AssignedTreeGraph";
 import { PublicTasksKanban } from "@/components/PublicTasksKanban";
 import { PublicTasksTable } from "@/components/PublicTasksTable";
-import TrackedTreeGraph from "@/components/TrackedTreeGraph";
+import SubscribedTreeGraph from "@/components/SubscribedTreeGraph";
 import TreeGraph from "@/components/TreeGraph";
 import Dashboard from "@/components/Dashboard";
 
@@ -45,7 +45,7 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<TasksUseState>({
     my: [],
     assigned: [],
-    tracked: [],
+    subscribed: [],
   });
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -66,20 +66,20 @@ export default function TasksPage() {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const [myRes, assignedRes, trackedRes] = await Promise.all([
-          apiCall("GET", "/task/getTasks"),
-          apiCall("GET", "/task/getAssignedTasks"),
-          apiCall("GET", "/task/getTrackedTasks"),
+        const [myRes, assignedRes, subscribedRes] = await Promise.all([
+          apiCall("GET", "/task/getOwned"),
+          apiCall("GET", "/task/getAssigned"),
+          apiCall("GET", "/task/getSubscribed"),
         ]);
 
-        if (!myRes.success || !assignedRes.success || !trackedRes.success) {
+        if (!myRes.success || !assignedRes.success || !subscribedRes.success) {
           throw new Error("Failed to fetch tasks");
         }
 
         setTasks({
           my: myRes.data as Task[],
           assigned: assignedRes.data as Task[],
-          tracked: trackedRes.data as Task[],
+          subscribed: subscribedRes.data as Task[],
         });
 
         const [view, type] = await Promise.all([
@@ -182,19 +182,13 @@ export default function TasksPage() {
 
   async function allowViewer(task: Task, userId: string, allow: boolean) {
     const response = allow
-      ? await apiCall("POST", `/task/${task.id}/allow/${userId}`)
-      : await apiCall("POST", `/task/${task.id}/reject/${userId}`);
-    if (response.success)
+      ? await apiCall("POST", `/task/${task.id}/acceptApplication/${userId}`)
+      : await apiCall("POST", `/task/${task.id}/rejectApplication/${userId}`);
+    if (response.success) {
       toast.success(`${allow ? "Allowed" : "Denied"} user successfully`);
-
-    const updatedTask = response.data as Task;
-    const updatedTasks = updateTaskInTree(
-      tasks[selectedType],
-      task.id,
-      updatedTask,
-    );
-    setTasks((prev) => ({ ...prev, [selectedType]: updatedTasks }));
-    setSelectedTask(updatedTask);
+      return true;
+    }
+    return false;
   }
 
   async function unassignUser(task: Task, userId: string) {
@@ -202,15 +196,11 @@ export default function TasksPage() {
       "POST",
       `/task/${task.id}/unassign/${userId}`,
     );
-    if (response.success) toast.success(`Unassigned user successfully`);
-    const updatedTask = response.data as Task;
-    const updatedTasks = updateTaskInTree(
-      tasks[selectedType],
-      task.id,
-      updatedTask,
-    );
-    setTasks({ ...tasks, [selectedType]: updatedTasks });
-    setSelectedTask(updatedTask);
+    if (response.success) {
+      toast.success(`Unassigned user successfully`);
+      return true;
+    }
+    return false;
   }
 
   return (
@@ -235,7 +225,7 @@ export default function TasksPage() {
         <TabsList>
           <TabsTrigger value="my">My Tasks</TabsTrigger>
           <TabsTrigger value="assigned">Assigned Tasks</TabsTrigger>
-          <TabsTrigger value="tracked">Tracked Tasks</TabsTrigger>
+          <TabsTrigger value="subscribed">Subscribed Tasks</TabsTrigger>
         </TabsList>
 
         <TabsContent value="my">
@@ -308,15 +298,15 @@ export default function TasksPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="tracked">
+        <TabsContent value="subscribed">
           {selectedView === "table" && (
-            <PublicTasksTable tasks={tasks.tracked} />
+            <PublicTasksTable tasks={tasks.subscribed} />
           )}
           {selectedView === "kanban" && (
-            <PublicTasksKanban tasks={tasks.tracked} />
+            <PublicTasksKanban tasks={tasks.subscribed} />
           )}
           {selectedView === "tree" && (
-            <TrackedTreeGraph tasks={tasks.tracked} />
+            <SubscribedTreeGraph tasks={tasks.subscribed} />
           )}
         </TabsContent>
       </Tabs>
@@ -354,16 +344,18 @@ export default function TasksPage() {
         onConfirmDelete={deleteTask}
         task={selectedTask}
       />
-      <AssignTaskModal
-        open={showAssignModal}
-        onClose={() => {
-          setShowAssignModal(false);
-          setSelectedTask(null);
-        }}
-        task={selectedTask!}
-        onAllow={allowViewer}
-        onUnassign={unassignUser}
-      />
+      {selectedType === "my" && (
+        <AssignTaskModal
+          open={showAssignModal}
+          onClose={() => {
+            setShowAssignModal(false);
+            setSelectedTask(null);
+          }}
+          task={selectedTask!}
+          onAllow={allowViewer}
+          onUnassign={unassignUser}
+        />
+      )}
       <TaskDetailModal
         open={showDetailsModal}
         onClose={() => {

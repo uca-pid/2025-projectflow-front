@@ -1,4 +1,5 @@
 import { type Task, type ViewType } from "@/types/task";
+import { type User } from "@/types/user";
 import {
   Accordion,
   AccordionContent,
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { PieChart } from "@/components/PieChart";
 import { BarChart } from "@/components/BarChart";
 import { RankChart } from "@/components/RankChart";
+import { apiCall } from "@/lib/api-client";
 
 import { flattenTasks, tasksToCsv } from "@/lib/task-utils";
 
@@ -62,6 +64,25 @@ const Dashboard = ({
       default:
         return tasks;
     }
+  }
+
+  async function enrichTasks(tasks: Task[]): Promise<Task[]> {
+    for (const task of tasks) {
+      const assignedUsersRes = await apiCall(
+        "GET",
+        `/task/${task.id}/assigned`,
+      );
+      const subscribedUsersRes = await apiCall(
+        "GET",
+        `/task/${task.id}/subscribed`,
+      );
+      const appliedUsersRes = await apiCall("GET", `/task/${task.id}/applied`);
+      task.assignedUsers = (assignedUsersRes?.data as User[]) || [];
+      task.subscribedUsers = (subscribedUsersRes?.data as User[]) || [];
+      task.appliedUsers = (appliedUsersRes?.data as User[]) || [];
+    }
+
+    return tasks;
   }
 
   return (
@@ -168,8 +189,10 @@ const Dashboard = ({
               hidden={advanced !== "tron"}
             >
               <Button
-                onClick={() => {
-                  tasksToCsv(flattenTasks(filterTasks(tasks, filter)));
+                onClick={async () => {
+                  tasksToCsv(
+                    await enrichTasks(flattenTasks(filterTasks(tasks, filter))),
+                  );
                 }}
                 title="Exportar"
                 className="mr-2"

@@ -18,16 +18,16 @@ export async function apiCall(
       credentials: "include",
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`API Error ${response.status}: ${response.statusText}`, errorText);
-      throw new Error(`${response.status}: ${response.statusText}`);
-    }
     const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message);
+    }
+
     return data;
   } catch (error) {
     console.error("API Call failed:", error);
-    toast.error(`Error fetching data: ${error.message}`);
+    toast.error(`${error}`);
     return { success: false };
   }
 }
