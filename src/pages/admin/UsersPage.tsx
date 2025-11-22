@@ -66,19 +66,16 @@ export default function AdminUsersPage() {
         },
       );
 
-      if (!response.success) {
-        toast.error("Error updating user");
-        throw new Error("Error updating user");
+      if (response.success) {
+        toast.success("User updated successfully");
+        setUsers((prevUsers) =>
+          prevUsers?.map((u) =>
+            u.id === selectedUser?.id ? (response.data as User) : u,
+          ),
+        );
+        setEditModalOpen(false);
+        setSelectedUser(null);
       }
-
-      toast.success("User updated successfully");
-      setUsers((prevUsers) =>
-        prevUsers?.map((u) =>
-          u.id === selectedUser?.id ? (response.data as User) : u,
-        ),
-      );
-      setEditModalOpen(false);
-      setSelectedUser(null);
     } catch (error) {
       console.error("Unexpected error:", error);
     }
@@ -88,18 +85,15 @@ export default function AdminUsersPage() {
     try {
       const response = await apiCall("DELETE", `/user/${selectedUser?.id}`);
 
-      if (!response.success) {
-        toast.error("Error deleting user");
-        throw new Error("Error deleting user");
+      if (response.success) {
+        toast.success("User deleted successfully");
+        setUsers((prevUsers) =>
+          prevUsers?.filter((u) => u.id !== selectedUser?.id),
+        );
+
+        setDeleteModalOpen(false);
+        setSelectedUser(null);
       }
-
-      toast.success("User deleted successfully");
-      setUsers((prevUsers) =>
-        prevUsers?.filter((u) => u.id !== selectedUser?.id),
-      );
-
-      setDeleteModalOpen(false);
-      setSelectedUser(null);
     } catch (error) {
       console.error("Unexpected error:", error);
     }

@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogHeader,
@@ -7,13 +7,15 @@ import {
   DialogFooter,
   DialogContent,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { User, Mail, Hash, Calendar, Shield, LogOut } from "lucide-react";
+import AvatarSelector from "./AvatarSelector";
+import { apiCall } from "@/lib/api-client";
+import type { Achievement } from "@/types/achievement";
 
 interface ProfileModalProps {
   open: boolean;
@@ -23,23 +25,19 @@ interface ProfileModalProps {
 export function ProfileModal({ open, onClose }: ProfileModalProps) {
   const { user, signOut } = useAuth();
   const [isRequesting, setIsRequesting] = useState(false);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+
+  useEffect(() => {
+    apiCall("GET", "/user/achievements").then((res) =>
+      setAchievements(res.data as Achievement[]),
+    );
+  }, [open]);
 
   const handleLogout = async () => {
     setIsRequesting(true);
     await signOut();
     setIsRequesting(false);
     onClose();
-  };
-
-  const formatDate = (date: Date | string) => {
-    const dateObj = typeof date === "string" ? new Date(date) : date;
-    return dateObj.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   return (
@@ -57,12 +55,11 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
             <>
               {/* User Avatar Section */}
               <div className="flex flex-col items-center space-y-4">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={user?.image} alt={user?.name} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-4xl">
-                    {user?.name?.charAt(0)?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <AvatarSelector
+                  name={user.name}
+                  image={user.image}
+                  achievements={achievements || []}
+                />
                 <div className="text-center">
                   <h2 className="text-2xl font-semibold">{user.name}</h2>
                   <p className="text-muted-foreground">{user.email}</p>
@@ -106,38 +103,6 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
                         {user.id.substring(0, 8)}...
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Account Information Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Calendar className="h-4 w-4" />
-                    Account Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Created
-                      </Label>
-                      <div className="font-medium text-sm">
-                        {formatDate(user.createdAt)}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Last Updated
-                      </Label>
-                      <div className="font-medium text-sm">
-                        {formatDate(user.updatedAt)}
-                      </div>
-                    </div>
                     <div className="flex items-center justify-between">
                       <Label className="flex items-center gap-2">
                         <Shield className="h-4 w-4" />
@@ -152,6 +117,19 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
                       </Badge>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Account Information Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Calendar className="h-4 w-4" />
+                    Achievements
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {JSON.stringify(achievements)}
                 </CardContent>
               </Card>
             </>

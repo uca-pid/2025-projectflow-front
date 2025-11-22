@@ -138,20 +138,28 @@ export default function TasksPage() {
       return;
     }
     const response = await apiCall("PUT", `/task/${task.id}`, task);
-    if (response.success) toast.success("Task updated successfully");
-    const updatedTask = response.data as Task;
-    const updatedTasks = updateTaskInTree(selectedTasks, task.id, updatedTask);
-    setTasks({ ...tasks, [selectedType]: updatedTasks });
-    setSelectedTask(updatedTask);
+    if (response.success) {
+      toast.success("Task updated successfully");
+      const updatedTask = response.data as Task;
+      const updatedTasks = updateTaskInTree(
+        selectedTasks,
+        task.id,
+        updatedTask,
+      );
+      setTasks({ ...tasks, [selectedType]: updatedTasks });
+      setSelectedTask(updatedTask);
+    }
   }
 
   async function createTask(task: Task) {
     const response = await apiCall("POST", "/task/create", task);
-    if (response.success) toast.success("Task created successfully");
-    const newTask = response.data as Task;
-    const updatedTasks = [...tasks[selectedType], newTask];
-    setTasks({ ...tasks, [selectedType]: updatedTasks });
-    setSelectedTask(newTask);
+    if (response.success) {
+      toast.success("Task created successfully");
+      const newTask = response.data as Task;
+      const updatedTasks = [...tasks[selectedType], newTask];
+      setTasks({ ...tasks, [selectedType]: updatedTasks });
+      setSelectedTask(newTask);
+    }
   }
 
   async function createSubtask(task: Task) {
@@ -161,23 +169,27 @@ export default function TasksPage() {
       `/task/${task.parentTaskId}/create`,
       task,
     );
-    if (response.success) toast.success("Task created successfully");
-    const newTask = response.data as Task;
-    const updatedTasks = addSubTaskToTree(
-      tasks[selectedType],
-      task.parentTaskId,
-      newTask,
-    );
-    setTasks({ ...tasks, [selectedType]: updatedTasks });
-    setSelectedTask(newTask);
+    if (response.success) {
+      toast.success("Task created successfully");
+      const newTask = response.data as Task;
+      const updatedTasks = addSubTaskToTree(
+        tasks[selectedType],
+        task.parentTaskId,
+        newTask,
+      );
+      setTasks({ ...tasks, [selectedType]: updatedTasks });
+      setSelectedTask(newTask);
+    }
   }
 
   async function deleteTask(taskId: string) {
     const response = await apiCall("DELETE", `/task/${taskId}`);
-    if (response.success) toast.success("Okay, See you! (Mr Ho)");
-    const updatedTasks = deleteTaskFromTree(tasks[selectedType], taskId);
-    setTasks({ ...tasks, [selectedType]: updatedTasks });
-    setSelectedTask(null);
+    if (response.success) {
+      toast.success("Okay, See you! (Mr Ho)");
+      const updatedTasks = deleteTaskFromTree(tasks[selectedType], taskId);
+      setTasks({ ...tasks, [selectedType]: updatedTasks });
+      setSelectedTask(null);
+    }
   }
 
   async function allowViewer(task: Task, userId: string, allow: boolean) {
