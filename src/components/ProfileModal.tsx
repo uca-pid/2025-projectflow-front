@@ -23,21 +23,38 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ open, onClose }: ProfileModalProps) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateUser } = useAuth();
   const [isRequesting, setIsRequesting] = useState(false);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [currentAvatar, setCurrentAvatar] = useState(user?.image || "");
 
   useEffect(() => {
-    apiCall("GET", "/user/achievements").then((res) =>
-      setAchievements(res.data as Achievement[]),
-    );
+    if (open) {
+      apiCall("GET", "/user/achievements").then((res) =>
+        setAchievements(res.data as Achievement[]),
+      );
+    }
   }, [open]);
+
+  useEffect(() => {
+    if (user?.image) {
+      setCurrentAvatar(user.image);
+    }
+  }, [user?.image]);
 
   const handleLogout = async () => {
     setIsRequesting(true);
     await signOut();
     setIsRequesting(false);
     onClose();
+  };
+
+  const handleAvatarUpdate = (newAvatar: string) => {
+    setCurrentAvatar(newAvatar);
+    // Update the user context so the avatar changes everywhere
+    if (user && updateUser) {
+      updateUser({ ...user, image: newAvatar });
+    }
   };
 
   return (
@@ -57,8 +74,10 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
               <div className="flex flex-col items-center space-y-4">
                 <AvatarSelector
                   name={user.name}
-                  image={user.image}
+                  image={currentAvatar}
                   achievements={achievements || []}
+                  userId={user.id}
+                  onAvatarUpdate={handleAvatarUpdate}
                 />
                 <div className="text-center">
                   <h2 className="text-2xl font-semibold">{user.name}</h2>
@@ -120,7 +139,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
                 </CardContent>
               </Card>
 
-              {/* Account Information Card */}
+              {/* Achievements Card */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -128,8 +147,30 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
                     Achievements
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {JSON.stringify(achievements)}
+                <CardContent>
+                  {achievements.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-3">
+                      {achievements.map((achievement) => (
+                        <div
+                          key={achievement.id}
+                          className="flex flex-col items-center p-2 rounded-lg border"
+                        >
+                          <img
+                            src={achievement.avatar}
+                            alt={achievement.name}
+                            className="w-12 h-12 rounded-full mb-1"
+                          />
+                          <span className="text-xs text-center">
+                            {achievement.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No achievements yet. Complete tasks to unlock avatars!
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </>

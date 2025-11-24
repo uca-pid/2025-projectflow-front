@@ -14,6 +14,7 @@ type AuthContextType = {
     password: string,
   ) => Promise<AuthResponse>;
   signOut: () => Promise<void>;
+  updateUser: (updatedUser: User) => void;
   requestPasswordReset: (
     email: string,
   ) => Promise<{ data: { status: boolean }; error: string }>;
@@ -54,7 +55,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const session = await authClient.getSession();
 
         const found_user = session?.data?.user;
-        setUser(found_user);
+        if (found_user) {
+          setUser({ ...found_user, role: (found_user as any).role || 'USER' } as User);
+        } else {
+          setUser(null);
+        }
         if (found_user) {
           setIsAuthenticated(true);
         }
@@ -71,7 +76,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const response = await authClient.signIn.email({ email, password });
     const session = await authClient.getSession();
     const found_user = session?.data?.user;
-    setUser(found_user);
+    if (found_user) {
+      setUser({ ...found_user, role: (found_user as any).role || 'USER' } as User);
+    } else {
+      setUser(null);
+    }
 
     if (found_user) {
       setIsAuthenticated(true);
@@ -88,7 +97,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
     const session = await authClient.getSession();
     const found_user = session?.data?.user;
-    setUser(found_user);
+    if (found_user) {
+      setUser({ ...found_user, role: (found_user as any).role || 'USER' } as User);
+    } else {
+      setUser(null);
+    }
 
     if (found_user) {
       setIsAuthenticated(true);
@@ -102,7 +115,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const response = await authClient.signUp.email({ email, password, name });
     const session = await authClient.getSession();
     const found_user = session?.data?.user;
-    setUser(found_user);
+    if (found_user) {
+      setUser({ ...found_user, role: (found_user as any).role || 'USER' } as User);
+      setIsAuthenticated(true);
+      setLoading(false);
+    } else {
+      setUser(null);
+    }
 
     if (found_user) {
       setIsAuthenticated(true);
@@ -134,6 +153,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return response;
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -144,6 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         signInSocial,
         signUp,
         signOut,
+        updateUser,
         requestPasswordReset,
         resetPassword,
       }}
