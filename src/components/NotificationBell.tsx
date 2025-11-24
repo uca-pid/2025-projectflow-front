@@ -24,45 +24,45 @@ export const NotificationBell = () => {
       }
       setIsLoading(false);
     });
-  }, []);
+  }, [isOpen]);
 
   const acceptInvitation = async (invitation: Invitation) => {
     setIsProcessing(true);
-    const response = await apiCall("POST", `/task/${invitation.taskId}/accept`);
+    const response = await apiCall(
+      "POST",
+      `/task/${invitation.taskId}/acceptInvitation`,
+    );
 
     setIsProcessing(false);
 
-    if (!response.success) {
-      toast.error("Failed to accept invitation");
-      throw new Error("Failed to accept invitation");
+    if (response.success) {
+      toast.success("Invitation accepted successfully");
+      setInvitations((prevInvitations) =>
+        prevInvitations.filter(
+          (invite) => invite.invitationId !== invitation.invitationId,
+        ),
+      );
+      document.location.reload();
     }
-
-    toast.success("Invitation accepted successfully");
-    setInvitations((prevInvitations) =>
-      prevInvitations.filter(
-        (invite) => invite.invitationId !== invitation.invitationId,
-      ),
-    );
-    document.location.reload();
   };
 
   const declineInvitation = async (invitation: Invitation) => {
     setIsProcessing(true);
-    const response = await apiCall("POST", `/task/${invitation.taskId}/reject`);
+    const response = await apiCall(
+      "POST",
+      `/task/${invitation.taskId}/rejectInvitation`,
+    );
 
     setIsProcessing(false);
 
-    if (!response.success) {
-      toast.error("Failed to decline invitation");
-      throw new Error("Failed to decline invitation");
+    if (response.success) {
+      toast.success("Invitation declined");
+      setInvitations((prevInvitations) =>
+        prevInvitations.filter(
+          (invite) => invite.invitationId !== invitation.invitationId,
+        ),
+      );
     }
-
-    toast.success("Invitation declined");
-    setInvitations((prevInvitations) =>
-      prevInvitations.filter(
-        (invite) => invite.invitationId !== invitation.invitationId,
-      ),
-    );
   };
 
   if (isLoading) {

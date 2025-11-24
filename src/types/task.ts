@@ -35,7 +35,7 @@ export interface Task {
   completedAt: string | null;
   assignedUsers: Partial<User>[];
   appliedUsers: Partial<User>[];
-  trackedUsers: Partial<User>[];
+  subscribedUsers: Partial<User>[];
   parentTaskId: string | null;
   parentTask: Partial<Task> | null;
   subTasks: Partial<Task>[];
@@ -45,12 +45,12 @@ export interface Task {
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";
 
-export type TaskType = "my" | "assigned" | "tracked";
+export type TaskType = "my" | "assigned" | "subscribed";
 
 export type ViewType = "tree" | "kanban" | "table";
 
 export interface TasksUseState {
   my: Task[];
   assigned: Task[];
-  tracked: Task[];
+  subscribed: Task[];
 }

@@ -31,8 +31,8 @@ interface AssignTaskModalProps {
   open: boolean;
   onClose: () => void;
   task: Task;
-  onAllow: (task: Task, userId: string, allow: boolean) => Promise<void>;
-  onUnassign: (task: Task, userId: string) => Promise<void>;
+  onAllow: (task: Task, userId: string, allow: boolean) => Promise<boolean>;
+  onUnassign: (task: Task, userId: string) => Promise<boolean>;
 }
 
 const ClickHereToCopy = ({ link }: { link: string }) => {
@@ -88,20 +88,39 @@ export const AssignTaskModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [taskWithUsers, setTaskWithUsers] = useState<Task>(task);
 
+  const handleUnassign = async (userId: string) => {
+    try {
+      if (await onUnassign(task, userId)) {
+        setTaskWithUsers({
+          ...taskWithUsers,
+          assignedUsers: taskWithUsers.assignedUsers.filter(
+            (u) => u.id !== userId,
+          ),
+          subscribedUsers: taskWithUsers.subscribedUsers.filter(
+            (u) => u.id !== userId,
+          ),
+        });
+      }
+    } catch (error) {
+      console.error("Error unassigning user:", error);
+      toast.error("Failed to unassign user");
+    }
+  };
+
   useEffect(() => {
     const fetchTaskUsers = async () => {
       try {
-        const [assignedUsersRes, trackedUsersRes, appliedUsersRes] =
+        const [assignedUsersRes, subscribedUsersRes, appliedUsersRes] =
           await Promise.all([
             apiCall("GET", `/task/${task.id}/assigned`),
-            apiCall("GET", `/task/${task.id}/tracked`),
+            apiCall("GET", `/task/${task.id}/subscribed`),
             apiCall("GET", `/task/${task.id}/applied`),
           ]);
 
         setTaskWithUsers({
           ...task,
           assignedUsers: (assignedUsersRes?.data as User[]) || [],
-          trackedUsers: (trackedUsersRes?.data as User[]) || [],
+          subscribedUsers: (subscribedUsersRes?.data as User[]) || [],
           appliedUsers: (appliedUsersRes?.data as User[]) || [],
         });
       } catch (error) {
@@ -152,14 +171,37 @@ export const AssignTaskModal = ({
           `Invitation email sent to ${email}! They can join using this email.`,
         );
         setEmail("");
-      } else {
-        toast.error("Failed to send invitation");
       }
     } catch (error) {
       console.error("Error inviting user:", error);
       toast.error("Failed to send invitation");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAcceptReject = async (userId: string, accept: boolean) => {
+    try {
+      if (await onAllow(task, userId, accept)) {
+        let updatedTaskWithUsers = taskWithUsers;
+        if (accept) {
+          updatedTaskWithUsers.subscribedUsers.push(
+            updatedTaskWithUsers.appliedUsers.find(
+              (u) => u.id === userId,
+            ) as User,
+          );
+        }
+        updatedTaskWithUsers = {
+          ...updatedTaskWithUsers,
+          appliedUsers: updatedTaskWithUsers.appliedUsers.filter(
+            (u) => u.id !== userId,
+          ),
+        };
+        setTaskWithUsers(updatedTaskWithUsers);
+      }
+    } catch (error) {
+      console.error("Error assigning user:", error);
+      toast.error("Failed to assign user");
     }
   };
 
@@ -308,14 +350,14 @@ export const AssignTaskModal = ({
                         >
                           <Ban
                             className="h-4 w-4 mr-2 text-red-600 hover:cursor-pointer"
-                            onClick={() => onUnassign(taskWithUsers, user.id!)}
+                            onClick={() => handleUnassign(user.id!)}
                           />
                         </TableCell>
                       </TableRow>
                     ),
                 )}
 
-                {taskWithUsers?.trackedUsers?.map((user) => (
+                {taskWithUsers?.subscribedUsers?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="flex flex-row items-center">
                       <Avatar className="w-8 h-8">
@@ -336,7 +378,7 @@ export const AssignTaskModal = ({
                     >
                       <Ban
                         className="h-4 w-4 mr-2 text-red-600 hover:cursor-pointer"
-                        onClick={() => onUnassign(taskWithUsers, user.id!)}
+                        onClick={() => handleUnassign(user.id!)}
                       />
                     </TableCell>
                   </TableRow>
@@ -363,7 +405,7 @@ export const AssignTaskModal = ({
                         <Button
                           variant="ghost"
                           title="Accept"
-                          onClick={() => onAllow(taskWithUsers, user.id!, true)}
+                          onClick={() => handleAcceptReject(user.id!, true)}
                         >
                           <Check className="text-green-600" />
                         </Button>
@@ -371,9 +413,7 @@ export const AssignTaskModal = ({
                           variant="ghost"
                           title="Decline"
                           // <CHANGE> Now calling onDecline prop
-                          onClick={() =>
-                            onAllow(taskWithUsers, user.id!, false)
-                          }
+                          onClick={() => handleAcceptReject(user.id!, false)}
                         >
                           <X className="text-red-600" />
                         </Button>
@@ -384,7 +424,7 @@ export const AssignTaskModal = ({
 
                 {!taskWithUsers?.appliedUsers?.length &&
                   !taskWithUsers?.assignedUsers?.length &&
-                  !taskWithUsers?.trackedUsers?.length && (
+                  !taskWithUsers?.subscribedUsers?.length && (
                     <TableRow>
                       <TableCell
                         className="font-medium text-center text-gray-500"

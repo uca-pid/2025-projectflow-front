@@ -157,7 +157,7 @@ export function tasksToCsv(tasks: Task[]) {
     "Completed By": t.completedBy?.name ?? "",
     "parent Task": t.parentTask?.title ?? "",
     "Assigned Users": t.assignedUsers?.length ?? 0,
-    "Tracked Users": t.trackedUsers?.length ?? 0,
+    "Subscribed Users": t.subscribedUsers?.length ?? 0,
     "Applied Users": t.appliedUsers?.length ?? 0,
   }));
 

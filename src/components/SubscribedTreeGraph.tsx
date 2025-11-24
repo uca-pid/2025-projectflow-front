@@ -46,7 +46,7 @@ const NODE_HEIGHT = 120;
 const HORIZONTAL_SPACING = 60;
 const VERTICAL_SPACING = 150;
 
-export default function TrackedTreeGraph({ tasks }: TreeGraphProps) {
+export default function SubscribedTreeGraph({ tasks }: TreeGraphProps) {
   const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });

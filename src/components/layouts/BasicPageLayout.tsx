@@ -13,7 +13,7 @@ interface LayoutProps {
 }
 
 export default function BasicPageLayout({ children }: LayoutProps) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const navigate = useNavigate();
   // "w-full max-w-md space-y-8 bg-card rounded-2xl border border-border p-8 shadow-2xl backdrop-blur-sm"

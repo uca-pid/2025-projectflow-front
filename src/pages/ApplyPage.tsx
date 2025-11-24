@@ -41,9 +41,7 @@ export default function ApplyPage() {
     const response = await apiCall("POST", `/task/${taskId}/apply`);
     setApplying(false);
 
-    if (!response.success) {
-      toast.error("Error applying to task");
-    } else {
+    if (response.success) {
       toast.success("Task applied successfully");
       setSuccess(true);
     }
