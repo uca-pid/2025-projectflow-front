@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { useMemo, useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
 import { apiCall } from "@/lib/api-client";
 import { type Task } from "@/types/task";
 import { type User } from "@/types/user";
@@ -34,6 +35,7 @@ interface RankChartProps {
 export const RankChart = ({ tasks, period }: RankChartProps) => {
   const [users, setUsers] = useState<Map<string, User>>(new Map());
   const [loading, setLoading] = useState(false);
+  const { user: myUser } = useAuth();
 
   // Calculate scores from tasks
   const userScores = useMemo(() => {
@@ -120,7 +122,9 @@ export const RankChart = ({ tasks, period }: RankChartProps) => {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <Loader2 className="animate-spin text-primary" />
+                <TableCell colSpan={2} className="text-center">
+                  <Loader2 className="animate-spin text-primary" />
+                </TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -149,7 +153,11 @@ export const RankChart = ({ tasks, period }: RankChartProps) => {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user?.image} alt={user?.name} />
+                        {user?.id === myUser?.id ? (
+                          <AvatarImage src={myUser?.image} alt={myUser?.name} />
+                        ) : (
+                          <AvatarImage src={user?.image} alt={user?.name} />
+                        )}
                         <AvatarFallback>
                           {user?.name?.slice(0, 2).toUpperCase() ?? "??"}
                         </AvatarFallback>

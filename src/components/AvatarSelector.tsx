@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { avatars } from "@/assets/avatars";
 import { apiCall } from "@/lib/api-client";
 import type { Achievement } from "@/types/achievement";
 
@@ -28,16 +28,25 @@ export default function AvatarSelector({
   onAvatarUpdate,
 }: AvatarSelectorProps) {
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+  const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
   const [open, setOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    apiCall("GET", "/user/allAchievements").then((res) =>
+      setAllAchievements(res.data as Achievement[]),
+    );
+  }, [open]);
 
   const handleConfirm = async () => {
     if (!selectedAvatar) return;
 
     setIsUpdating(true);
     try {
-      const newAvatarUrl = avatars[selectedAvatar as keyof typeof avatars];
-      
+      const newAvatarUrl = allAchievements.find(
+        (a) => a.name === selectedAvatar,
+      )?.avatar;
+
       await apiCall("PUT", `/user/update/${userId}`, {
         userToUpdateData: {
           image: newAvatarUrl,
@@ -45,7 +54,7 @@ export default function AvatarSelector({
       });
 
       if (onAvatarUpdate) {
-        onAvatarUpdate(newAvatarUrl);
+        onAvatarUpdate(newAvatarUrl!);
       }
 
       setOpen(false);
@@ -61,10 +70,6 @@ export default function AvatarSelector({
   const isAvatarUnlocked = (avatarName: string) => {
     return achievements.some((a) => a.name === avatarName);
   };
-
-  const currentAvatarName = Object.entries(avatars).find(
-    ([_, url]) => url === image
-  )?.[0];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -83,53 +88,63 @@ export default function AvatarSelector({
           <DialogTitle className="text-2xl font-semibold">
             Choose Your Avatar
           </DialogTitle>
+          <DialogDescription className="text-gray-600">
+            Select the avatar you want to use for your profile.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-4 gap-4 mt-6 max-h-96 overflow-y-auto p-2">
-          {Object.entries(avatars).map(([avatarName, src]) => {
-            const isUnlocked = isAvatarUnlocked(avatarName);
-            const isCurrent = avatarName === currentAvatarName;
+          {allAchievements.map(
+            ({ name: avatarName, avatar: src, requiredTasks }) => {
+              const isUnlocked = isAvatarUnlocked(avatarName);
+              const isCurrent = src === image;
 
-            return (
-              <button
-                key={avatarName}
-                onClick={() => setSelectedAvatar(avatarName)}
-                disabled={!isUnlocked}
-                className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
-                  selectedAvatar === avatarName
-                    ? "border-blue-600 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
-                } ${
-                  !isUnlocked
-                    ? "opacity-40 cursor-not-allowed"
-                    : "hover:shadow-lg cursor-pointer"
-                } ${isCurrent ? "ring-2 ring-green-500" : ""}`}
-              >
-                <img
-                  src={src}
-                  alt={avatarName}
-                  className="w-20 h-20 rounded-full mb-2"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  {avatarName}
-                </span>
-                {isCurrent && (
-                  <span className="text-xs text-green-600 font-semibold mt-1">
-                    Current
+              return (
+                <button
+                  key={avatarName}
+                  onClick={() => setSelectedAvatar(avatarName)}
+                  disabled={!isUnlocked}
+                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                    selectedAvatar === avatarName
+                      ? "border-blue-600 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  } ${
+                    !isUnlocked
+                      ? "opacity-40 cursor-not-allowed"
+                      : "hover:shadow-lg cursor-pointer"
+                  } ${isCurrent ? "ring-2 ring-green-500" : ""}`}
+                >
+                  <img
+                    src={src}
+                    alt={avatarName}
+                    className="w-20 h-20 rounded-full mb-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    {avatarName}
                   </span>
-                )}
-                {!isUnlocked && (
-                  <span className="text-xs text-red-600 font-semibold mt-1">
-                    🔒 Locked
-                  </span>
-                )}
-                {isUnlocked && !isCurrent && (
-                  <span className="text-xs text-blue-600 font-semibold mt-1">
-                    ✓ Unlocked
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                  {isCurrent && (
+                    <span className="text-xs text-green-600 font-semibold mt-1">
+                      Current
+                    </span>
+                  )}
+                  {!isUnlocked && (
+                    <>
+                      <span className="text-xs text-red-600 font-semibold mt-1">
+                        🔒 Locked
+                      </span>
+                      <span className="text-xs text-red-400 mt-1">
+                        Complete {requiredTasks} tasks
+                      </span>
+                    </>
+                  )}
+                  {isUnlocked && !isCurrent && (
+                    <span className="text-xs text-blue-600 font-semibold mt-1">
+                      ✓ Unlocked
+                    </span>
+                  )}
+                </button>
+              );
+            },
+          )}
         </div>
         {selectedAvatar && (
           <div className="mt-6 flex justify-end gap-3">
@@ -152,3 +167,4 @@ export default function AvatarSelector({
     </Dialog>
   );
 }
+

@@ -201,7 +201,7 @@ const Dashboard = ({
                 <FileSpreadsheet className="h-4 w-4" />
               </Button>
               <DropdownMenu>
-                <DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild>
                   <Button title="Filter">
                     <Funnel className="h-4 w-4" />
                   </Button>

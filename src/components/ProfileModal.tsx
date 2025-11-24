@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogContent,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,11 +61,14 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             User Profile
           </DialogTitle>
+          <DialogDescription>
+            View and update your profile information.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -193,3 +197,4 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
     </Dialog>
   );
 }
+
