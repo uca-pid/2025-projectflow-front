@@ -23,9 +23,11 @@ import { useEffect, useState } from "react";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import { type User } from "@/types/user";
 import { apiCall } from "@/lib/api-client";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[] | null>();
+  const { user: me } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<boolean>(false);
@@ -139,10 +141,14 @@ export default function AdminUsersPage() {
                   <TableRow key={user.id}>
                     <TableCell className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={user.image}
-                          alt={`${user.name?.charAt(0)}`}
-                        />
+                        {user.id === me?.id ? (
+                          <AvatarImage src={me?.image} />
+                        ) : (
+                          <AvatarImage
+                            src={user.image}
+                            alt={`${user.name?.charAt(0)}`}
+                          />
+                        )}
                         <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>

@@ -2,5 +2,6 @@ export type Achievement = {
   code: string;
   name: string;
   avatar: string;
-  requiredTasks: number;
+  type: "TASK_COMPLETION" | "TASK_REVIEW" | "TASK_ACCEPT";
+  required: number;
 };

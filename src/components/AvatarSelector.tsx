@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { apiCall } from "@/lib/api-client";
+import { useAuth } from "@/hooks/useAuth";
 import type { Achievement } from "@/types/achievement";
 
 type AvatarSelectorProps = {
@@ -32,6 +33,8 @@ export default function AvatarSelector({
   const [open, setOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const { user } = useAuth();
+
   useEffect(() => {
     apiCall("GET", "/user/allAchievements").then((res) =>
       setAllAchievements(res.data as Achievement[]),
@@ -39,13 +42,17 @@ export default function AvatarSelector({
   }, [open]);
 
   const handleConfirm = async () => {
-    if (!selectedAvatar) return;
-
     setIsUpdating(true);
     try {
-      const newAvatarUrl = allAchievements.find(
-        (a) => a.name === selectedAvatar,
-      )?.avatar;
+      let newAvatarUrl: string | null = null;
+
+      if (selectedAvatar === "" || selectedAvatar === null) {
+        newAvatarUrl = null;
+      } else {
+        newAvatarUrl =
+          allAchievements.find((a) => a.name === selectedAvatar)?.avatar ||
+          null;
+      }
 
       await apiCall("PUT", `/user/update/${userId}`, {
         userToUpdateData: {
@@ -57,7 +64,7 @@ export default function AvatarSelector({
         onAvatarUpdate(newAvatarUrl!);
       }
 
-      setOpen(false);
+      //setOpen(false);
       setSelectedAvatar(null);
     } catch (error) {
       console.error("Failed to update avatar:", error);
@@ -68,7 +75,19 @@ export default function AvatarSelector({
   };
 
   const isAvatarUnlocked = (avatarName: string) => {
+    if (user?.role === "ADMIN") return true;
     return achievements.some((a) => a.name === avatarName);
+  };
+
+  const isDefaultCurrent = !image || image === "";
+  const isSelectedCurrentAvatar = () => {
+    if (selectedAvatar === "" || selectedAvatar === null) {
+      return isDefaultCurrent;
+    }
+    const selectedAvatarUrl = allAchievements.find(
+      (a) => a.name === selectedAvatar,
+    )?.avatar;
+    return selectedAvatarUrl === image;
   };
 
   return (
@@ -92,9 +111,37 @@ export default function AvatarSelector({
             Select the avatar you want to use for your profile.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-4 gap-4 mt-6 max-h-96 overflow-y-auto p-2">
+        <div className="grid grid-cols-3 gap-4 mt-6 max-h-96 overflow-y-auto p-2">
+          <button
+            onClick={() => setSelectedAvatar("")}
+            className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+              selectedAvatar === ""
+                ? "border-blue-600 bg-blue-50"
+                : "border-gray-200 hover:border-gray-300"
+            } ${isDefaultCurrent ? "ring-2 ring-green-500" : ""} hover:shadow-lg cursor-pointer`}
+          >
+            <Avatar className="h-20 w-20 cursor-pointer hover:opacity-80 transition-opacity">
+              <AvatarFallback className="bg-primary text-primary-foreground text-4xl">
+                {name?.charAt(0)?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium text-gray-700 mt-2">
+              No Avatar
+            </span>
+            {isDefaultCurrent && (
+              <span className="text-xs text-green-600 font-semibold mt-1">
+                Current
+              </span>
+            )}
+            {!isDefaultCurrent && (
+              <span className="text-xs text-blue-600 font-semibold mt-1">
+                ✓ Always Available
+              </span>
+            )}
+          </button>
+
           {allAchievements.map(
-            ({ name: avatarName, avatar: src, requiredTasks }) => {
+            ({ name: avatarName, avatar: src, required, type }) => {
               const isUnlocked = isAvatarUnlocked(avatarName);
               const isCurrent = src === image;
 
@@ -127,14 +174,16 @@ export default function AvatarSelector({
                     </span>
                   )}
                   {!isUnlocked && (
-                    <>
+                    <Fragment key={`locked-${avatarName}`}>
                       <span className="text-xs text-red-600 font-semibold mt-1">
                         🔒 Locked
                       </span>
                       <span className="text-xs text-red-400 mt-1">
-                        Complete {requiredTasks} tasks
+                        {type === "TASK_COMPLETION" && "Complete"}
+                        {type === "TASK_REVIEW" && "Review"}
+                        {type === "TASK_ACCEPT" && "Join"} {required} tasks
                       </span>
-                    </>
+                    </Fragment>
                   )}
                   {isUnlocked && !isCurrent && (
                     <span className="text-xs text-blue-600 font-semibold mt-1">
@@ -146,25 +195,27 @@ export default function AvatarSelector({
             },
           )}
         </div>
-        {selectedAvatar && (
-          <div className="mt-6 flex justify-end gap-3">
-            <Button
-              onClick={() => {
-                setOpen(false);
-                setSelectedAvatar(null);
-              }}
-              variant="outline"
-              disabled={isUpdating}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleConfirm} disabled={isUpdating}>
-              {isUpdating ? "Updating..." : "Confirm"}
-            </Button>
-          </div>
-        )}
+        <div className="mt-6 flex justify-end gap-3">
+          <Button
+            onClick={() => {
+              setOpen(false);
+              setSelectedAvatar(null);
+            }}
+            variant="outline"
+            disabled={isUpdating}
+          >
+            Close
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={
+              isUpdating || isSelectedCurrentAvatar() || selectedAvatar == null
+            }
+          >
+            {isUpdating ? "Updating..." : "Confirm"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
-
