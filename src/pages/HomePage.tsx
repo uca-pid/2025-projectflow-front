@@ -27,7 +27,7 @@ export default function HomePage() {
           Welcome {user?.name}, access different pages:
         </p>
         <div className="space-y-4 flex flex-col items-center">
-          <Button className="w-48" onClick={() => navigate("/tasks")}>
+          <Button className="w-48" onClick={() => navigate("/")}>
             <ClipboardList className="h-4 w-4" />
             Task Management
           </Button>

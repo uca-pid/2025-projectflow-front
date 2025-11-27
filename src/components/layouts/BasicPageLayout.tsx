@@ -5,7 +5,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import WonderlandBackground from "@/components/WonderlandBackground";
-import { FolderKanbanIcon, LogOut } from "lucide-react";
+import { FolderKanbanIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface LayoutProps {
@@ -16,6 +16,13 @@ export default function BasicPageLayout({ children }: LayoutProps) {
   const { user } = useAuth();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const navigate = useNavigate();
+  const goHome = () => {
+    if (user?.role === "ADMIN") {
+      navigate("/dashboard");
+    } else {
+      navigate("/");
+    }
+  };
   // "w-full max-w-md space-y-8 bg-card rounded-2xl border border-border p-8 shadow-2xl backdrop-blur-sm"
   return (
     <WonderlandBackground>
@@ -29,9 +36,7 @@ export default function BasicPageLayout({ children }: LayoutProps) {
                 <Button
                   variant="link"
                   className="hover:cursor-pointer"
-                  onClick={() => {
-                    navigate("/");
-                  }}
+                  onClick={goHome}
                 >
                   <h1 className="text-xl font-bold text-gray-900">
                     ProjectFlow
