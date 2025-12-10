@@ -69,6 +69,7 @@ export function formatDeadline(date: Date): string {
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
   const formattedDate = deadline.toLocaleDateString("en-US", {
+    timeZone: "UTC",
     year: "numeric",
     month: "short",
     day: "numeric",

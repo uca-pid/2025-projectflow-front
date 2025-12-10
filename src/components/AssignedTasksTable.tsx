@@ -25,6 +25,7 @@ import {
   Check,
   Ban,
   Eye,
+  Repeat,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -126,6 +127,11 @@ function TaskRow({
               {getStatusLabel(task.status)}
             </>
           </Badge>
+          {task.recurrenceType !== null && (
+            <Badge variant="outline" className="ml-2">
+              <Repeat className="w-3 h-4" />
+            </Badge>
+          )}
         </TableCell>
 
         <TableCell>

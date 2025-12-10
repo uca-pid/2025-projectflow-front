@@ -9,10 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ChevronRight,
-  ChevronDown,
-} from "lucide-react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import {
   getStatusVariant,
@@ -89,7 +86,9 @@ function TaskRow({
               const StatusIcon = getStatusIcon(task.status);
               return (
                 <>
-                  <StatusIcon className={`w-3 h-3 mr-1 ${task.status === "IN_PROGRESS" ? "animate-spin" : ""}`} />
+                  <StatusIcon
+                    className={`w-3 h-3 mr-1 ${task.status === "IN_PROGRESS" ? "animate-spin" : ""}`}
+                  />
                   {getStatusLabel(task.status)}
                 </>
               );

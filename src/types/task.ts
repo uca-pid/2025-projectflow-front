@@ -38,10 +38,15 @@ export interface Task {
   subscribedUsers: Partial<User>[];
   parentTaskId: string | null;
   parentTask: Partial<Task> | null;
+  recurrenceType: RecurrenceType | null;
+  recurrenceExpiresAt: string | null;
+  recurrences: number | null;
   subTasks: Partial<Task>[];
   notes?: Note[];
   objectives?: Objective[];
 }
+
+export type RecurrenceType = "DAILY" | "WEEKLY" | "MONTHLY" | "PARENT";
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";
 

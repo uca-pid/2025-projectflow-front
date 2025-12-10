@@ -185,7 +185,7 @@ export default function TasksPage() {
   async function deleteTask(taskId: string) {
     const response = await apiCall("DELETE", `/task/${taskId}`);
     if (response.success) {
-      toast.success("Okay, See you! (Mr Ho)");
+      toast.success("Task deleted successfully");
       const updatedTasks = deleteTaskFromTree(tasks[selectedType], taskId);
       setTasks({ ...tasks, [selectedType]: updatedTasks });
       setSelectedTask(null);

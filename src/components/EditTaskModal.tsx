@@ -1,5 +1,7 @@
+import type React from "react";
+
 import { useState, useEffect } from "react";
-import type { Task, TaskStatus } from "@/types/task";
+import type { Task, TaskStatus, RecurrenceType } from "@/types/task";
 import {
   Dialog,
   DialogHeader,
@@ -30,19 +32,40 @@ export function EditTaskModal({
     deadline: "",
     status: "TODO" as TaskStatus,
     isPublic: false,
+    recurrenceType: null as string | null,
+    recurrenceExpiresAt: null as string | null,
+    recurrences: null as number | null,
   });
+  const [recurrenceEndType, setRecurrenceEndType] = useState<
+    "date" | "count" | "never"
+  >("never");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (task) {
       const deadlineString = new Date(task.deadline).toISOString().slice(0, 16);
+      const recurrenceExpiresAtString = task.recurrenceExpiresAt
+        ? new Date(task.recurrenceExpiresAt).toISOString().slice(0, 16)
+        : null;
+
       setFormData({
         title: task.title,
         description: task.description,
         deadline: deadlineString,
         status: task.status as TaskStatus,
         isPublic: task.isPublic,
+        recurrenceType: task.recurrenceType || null,
+        recurrenceExpiresAt: recurrenceExpiresAtString,
+        recurrences: task.recurrences || null,
       });
+
+      if (task.recurrenceExpiresAt) {
+        setRecurrenceEndType("date");
+      } else if (task.recurrences) {
+        setRecurrenceEndType("count");
+      } else {
+        setRecurrenceEndType("never");
+      }
     }
   }, [task]);
 
@@ -72,6 +95,18 @@ export function EditTaskModal({
       }
     }
 
+    if (formData.recurrenceType) {
+      if (recurrenceEndType === "date" && !formData.recurrenceExpiresAt) {
+        newErrors.recurrenceExpiresAt = "Expiry date is required";
+      }
+      if (
+        recurrenceEndType === "count" &&
+        (!formData.recurrences || formData.recurrences < 1)
+      ) {
+        newErrors.recurrences = "Number of repetitions must be at least 1";
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -88,6 +123,11 @@ export function EditTaskModal({
         status: formData.status,
         isPublic: formData.isPublic,
         subTasks: task.subTasks,
+        recurrenceType: formData.recurrenceType as RecurrenceType,
+        recurrenceExpiresAt:
+          recurrenceEndType === "date" ? formData.recurrenceExpiresAt : null,
+        recurrences:
+          recurrenceEndType === "count" ? formData.recurrences : null,
       };
 
       onUpdateTask(taskData as Task);
@@ -102,25 +142,23 @@ export function EditTaskModal({
       deadline: "",
       status: "TODO",
       isPublic: false,
+      recurrenceType: null,
+      recurrenceExpiresAt: null,
+      recurrences: null,
     });
+    setRecurrenceEndType("never");
     setErrors({});
     onClose();
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (
+    field: string,
+    value: string | boolean | number | null,
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
-  };
-
-  const getMinDateTime = () => {
-    if (formData.status === "DONE") {
-      return ""; // No minimum for completed tasks
-    }
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + 1);
-    return now.toISOString().slice(0, 16);
   };
 
   return (
@@ -211,6 +249,122 @@ export function EditTaskModal({
               <p className="text-red-500 text-xs mt-1">{errors.deadline}</p>
             )}
           </div>
+
+          <div>
+            <label
+              htmlFor="edit-recurrence-type"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Recurrence
+            </label>
+            <div className="flex gap-2">
+              <select
+                id="edit-recurrence-type"
+                value={formData.recurrenceType || ""}
+                onChange={(e) => {
+                  const value = e.target.value || null;
+                  handleInputChange("recurrenceType", value);
+                  // Reset recurrence end fields when type changes
+                  if (!value) {
+                    setRecurrenceEndType("never");
+                    handleInputChange("recurrenceExpiresAt", null);
+                    handleInputChange("recurrences", null);
+                  }
+                }}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">None</option>
+                <option value="PARENT">Copy Parent</option>
+                <option value="DAILY">Daily</option>
+                <option value="WEEKLY">Weekly</option>
+                <option value="MONTHLY">Monthly</option>
+              </select>
+
+              {formData.recurrenceType &&
+                formData.recurrenceType !== "PARENT" && (
+                  <select
+                    id="edit-recurrence-end-type"
+                    value={recurrenceEndType}
+                    onChange={(e) => {
+                      const value = e.target.value as
+                        | "date"
+                        | "count"
+                        | "never";
+                      setRecurrenceEndType(value);
+                      // Clear the opposite field
+                      if (value === "date") {
+                        handleInputChange("recurrences", null);
+                      } else if (value === "count") {
+                        handleInputChange("recurrenceExpiresAt", null);
+                      } else {
+                        handleInputChange("recurrenceExpiresAt", null);
+                        handleInputChange("recurrences", null);
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="never">Never ends</option>
+                    <option value="date">End by date</option>
+                    <option value="count">After X times</option>
+                  </select>
+                )}
+            </div>
+          </div>
+
+          {formData.recurrenceType && recurrenceEndType === "date" && (
+            <div>
+              <label
+                htmlFor="edit-recurrence-expires-at"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Recurrence End Date *
+              </label>
+              <Input
+                id="edit-recurrence-expires-at"
+                type="datetime-local"
+                value={formData.recurrenceExpiresAt || ""}
+                onChange={(e) =>
+                  handleInputChange("recurrenceExpiresAt", e.target.value)
+                }
+                className={errors.recurrenceExpiresAt ? "border-red-500" : ""}
+              />
+              {errors.recurrenceExpiresAt && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.recurrenceExpiresAt}
+                </p>
+              )}
+            </div>
+          )}
+
+          {formData.recurrenceType && recurrenceEndType === "count" && (
+            <div>
+              <label
+                htmlFor="edit-recurrences"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Number of Repetitions *
+              </label>
+              <Input
+                id="edit-recurrences"
+                type="number"
+                min="1"
+                value={formData.recurrences || ""}
+                onChange={(e) =>
+                  handleInputChange(
+                    "recurrences",
+                    e.target.value ? Number.parseInt(e.target.value) : null,
+                  )
+                }
+                placeholder="e.g., 5"
+                className={errors.recurrences ? "border-red-500" : ""}
+              />
+              {errors.recurrences && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.recurrences}
+                </p>
+              )}
+            </div>
+          )}
 
           <div>
             <label
