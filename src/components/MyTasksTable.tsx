@@ -24,7 +24,9 @@ import {
   ChevronDown,
   Eye,
   Repeat,
+  TriangleAlert,
 } from "lucide-react";
+import { getTaskSlaIcon } from "./TaskSlaIcon";
 import { useState } from "react";
 import {
   getStatusVariant,
@@ -33,6 +35,7 @@ import {
   getStatusLabel,
   formatDeadline,
 } from "@/lib/task-status-utils";
+import { getRemainingSLA } from "@/lib/task-utils";
 import { type Task } from "@/types/task";
 
 type MyTasksTableProps = {
@@ -43,6 +46,7 @@ type MyTasksTableProps = {
   openAssignModal?: (open: boolean) => void;
   openSubtaskModal?: (open: boolean) => void;
   openDetailsModal?: (open: boolean) => void;
+  openSlaModal?: (open: boolean) => void;
 };
 
 function TaskRow({
@@ -55,6 +59,7 @@ function TaskRow({
   onAssignTask,
   onCreateSubTask,
   onViewDetails,
+  onSlaModal,
 }: {
   task: Task;
   level?: number;
@@ -65,6 +70,7 @@ function TaskRow({
   onAssignTask?: (task: Task) => void;
   onCreateSubTask?: (task: Task) => void;
   onViewDetails?: (task: Task) => void;
+  onSlaModal?: (task: Task) => void;
 }) {
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
   const isExpanded = expandedTasks.has(task.id);
@@ -93,6 +99,7 @@ function TaskRow({
             ) : (
               <div className="w-6 mr-2" />
             )}
+            {getTaskSlaIcon(task)}
             <div className="font-medium">{task.title}</div>
           </div>
         </TableCell>
@@ -106,6 +113,20 @@ function TaskRow({
         <TableCell>
           <div className="text-sm">
             {formatDeadline(new Date(task.deadline))}
+            {task.sla && task.status !== "DONE" && (
+              <span
+                className={
+                  "ml-2 text-xs" +
+                  (task.sla === "NORMAL" ? " text-yellow-600" : " text-red-600")
+                }
+              >
+                SLA:&nbsp;
+                {getRemainingSLA(task.slaStartedAt!, task.sla).expired
+                  ? "Expired"
+                  : getRemainingSLA(task.slaStartedAt!, task.sla)
+                      .remainingHours + " hours"}
+              </span>
+            )}
           </div>
         </TableCell>
 
@@ -158,6 +179,13 @@ function TaskRow({
                 Assign Task
               </DropdownMenuItem>
               <DropdownMenuItem
+                onClick={() => onSlaModal!(task)}
+                className="text-yellow-700"
+              >
+                <TriangleAlert className="mr-2 h-4 w-4 text-yellow-700" />
+                Set SLA
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={() => onDeleteTask!(task)}
                 className="text-red-600"
               >
@@ -183,6 +211,7 @@ function TaskRow({
             onAssignTask={onAssignTask}
             onCreateSubTask={onCreateSubTask}
             onViewDetails={onViewDetails}
+            onSlaModal={onSlaModal}
           />
         ))}
     </>
@@ -197,6 +226,7 @@ export function MyTasksTable({
   openSubtaskModal,
   openDeleteModal,
   openDetailsModal,
+  openSlaModal,
 }: MyTasksTableProps) {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
@@ -246,6 +276,11 @@ export function MyTasksTable({
     openDetailsModal?.(true);
   }
 
+  function onSlaModal(task: Task) {
+    setSelectedTask(task);
+    openSlaModal?.(true);
+  }
+
   return (
     <div className="rounded-md border shadow bg-white">
       <Table>
@@ -282,6 +317,7 @@ export function MyTasksTable({
                 onAssignTask={onAssignTask}
                 onCreateSubTask={onCreateSubTask}
                 onViewDetails={onViewDetails}
+                onSlaModal={onSlaModal}
               />
             ))}
         </TableBody>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import LoadingPage from "./LoadingPage";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { CreateSubTaskModal } from "@/components/CreateSubTaskModal";
@@ -8,6 +8,7 @@ import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { Button } from "@/components/ui/button";
 import BasicPageLayout from "@/components/layouts/BasicPageLayout";
 import { AssignTaskModal } from "@/components/AssignTaskModal";
+import { SetSlaModal } from "@/components/SetSlaModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MyTasksTable } from "@/components/MyTasksTable";
 import { MyTasksKanban } from "@/components/MyTasksKanban";
@@ -36,6 +37,10 @@ import {
 } from "@/lib/task-utils";
 import { useAuth } from "@/hooks/useAuth";
 import { apiCall } from "@/lib/api-client";
+import {
+  useTaskRefetchListener,
+  useTaskRefetchTrigger,
+} from "@/hooks/useTaskRefetch";
 
 import { toast } from "sonner";
 
@@ -62,43 +67,54 @@ export default function TasksPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showSlaModal, setShowSlaModal] = useState(false);
+
+  const refetchTasks = useTaskRefetchTrigger();
+  const fetchTasks = useCallback(async () => {
+    try {
+      const [myRes, assignedRes, subscribedRes] = await Promise.all([
+        apiCall("GET", "/task/getOwned"),
+        apiCall("GET", "/task/getAssigned"),
+        apiCall("GET", "/task/getSubscribed"),
+      ]);
+
+      if (!myRes.success || !assignedRes.success || !subscribedRes.success) {
+        throw new Error("Failed to fetch tasks");
+      }
+
+      setTasks({
+        my: myRes.data as Task[],
+        assigned: assignedRes.data as Task[],
+        subscribed: subscribedRes.data as Task[],
+      });
+
+      setError(false);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Listen for refetch events
+  useTaskRefetchListener(fetchTasks);
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const [myRes, assignedRes, subscribedRes] = await Promise.all([
-          apiCall("GET", "/task/getOwned"),
-          apiCall("GET", "/task/getAssigned"),
-          apiCall("GET", "/task/getSubscribed"),
-        ]);
+    const initializeTasks = async () => {
+      await fetchTasks();
 
-        if (!myRes.success || !assignedRes.success || !subscribedRes.success) {
-          throw new Error("Failed to fetch tasks");
-        }
+      const [view, type] = await Promise.all([
+        localStorage.getItem("viewType") || "table",
+        localStorage.getItem("taskType") || "my",
+      ]);
 
-        setTasks({
-          my: myRes.data as Task[],
-          assigned: assignedRes.data as Task[],
-          subscribed: subscribedRes.data as Task[],
-        });
-
-        const [view, type] = await Promise.all([
-          localStorage.getItem("viewType") || "table",
-          localStorage.getItem("taskType") || "my",
-        ]);
-
-        setSelectedView(view as ViewType);
-        setSelectedType(type as TaskType);
-      } catch (err) {
-        console.error("Error fetching tasks:", err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
+      setSelectedView(view as ViewType);
+      setSelectedType(type as TaskType);
     };
 
-    fetchTasks();
-  }, []);
+    initializeTasks();
+  }, [fetchTasks]);
 
   if (loading) {
     return <LoadingPage />;
@@ -149,6 +165,7 @@ export default function TasksPage() {
       setTasks({ ...tasks, [selectedType]: updatedTasks });
       setSelectedTask(updatedTask);
     }
+    refetchTasks();
   }
 
   async function createTask(task: Task) {
@@ -250,6 +267,7 @@ export default function TasksPage() {
               openAssignModal={setShowAssignModal}
               openSubtaskModal={setShowCreateSubModal}
               openDetailsModal={setShowDetailsModal}
+              openSlaModal={setShowSlaModal}
             />
           )}
 
@@ -275,6 +293,7 @@ export default function TasksPage() {
               openDeleteTask={() => setShowDeleteModal(true)}
               openAssignTask={() => setShowAssignModal(true)}
               openDetailsModal={() => setShowDetailsModal(true)}
+              openSlaModal={() => setShowSlaModal(true)}
             />
           )}
         </TabsContent>
@@ -357,16 +376,27 @@ export default function TasksPage() {
         task={selectedTask}
       />
       {selectedType === "my" && (
-        <AssignTaskModal
-          open={showAssignModal}
-          onClose={() => {
-            setShowAssignModal(false);
-            setSelectedTask(null);
-          }}
-          task={selectedTask!}
-          onAllow={allowViewer}
-          onUnassign={unassignUser}
-        />
+        <>
+          <AssignTaskModal
+            open={showAssignModal}
+            onClose={() => {
+              setShowAssignModal(false);
+              setSelectedTask(null);
+            }}
+            task={selectedTask!}
+            onAllow={allowViewer}
+            onUnassign={unassignUser}
+          />
+          <SetSlaModal
+            task={selectedTask!}
+            open={showSlaModal}
+            onClose={() => {
+              setShowSlaModal(false);
+              setSelectedTask(null);
+            }}
+            onUpdateTask={updateTask}
+          />
+        </>
       )}
       <TaskDetailModal
         open={showDetailsModal}

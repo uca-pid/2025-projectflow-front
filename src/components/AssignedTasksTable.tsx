@@ -27,6 +27,7 @@ import {
   Eye,
   Repeat,
 } from "lucide-react";
+import { getTaskSlaIcon } from "@/components/TaskSlaIcon";
 import { useState } from "react";
 import {
   getStatusVariant,
@@ -94,7 +95,10 @@ function TaskRow({
             ) : (
               <div className="w-6 mr-2" />
             )}
-            <div className="font-medium">{task.title}</div>
+            <div className="font-medium flex space-x-2">
+              {getTaskSlaIcon(task)}
+              {task.title}
+            </div>
           </div>
         </TableCell>
 

@@ -11,6 +11,7 @@ import PasswordRecovery from "@/pages/PasswordRecovery";
 import PasswordReset from "@/pages/PasswordReset";
 import UsersPage from "@/pages/admin/UsersPage";
 import TasksPage from "@/pages/TasksPage";
+import { SLADashboard } from "@/pages/SlaDashboard";
 
 import ApplyPage from "@/pages/ApplyPage";
 import ViewTaskPage from "@/pages/ViewTaskPage";
@@ -51,6 +52,14 @@ function App() {
           element={
             <ProtectedRoute>
               <TasksPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sla"
+          element={
+            <ProtectedRoute>
+              <SLADashboard />
             </ProtectedRoute>
           }
         />

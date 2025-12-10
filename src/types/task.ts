@@ -41,10 +41,14 @@ export interface Task {
   recurrenceType: RecurrenceType | null;
   recurrenceExpiresAt: string | null;
   recurrences: number | null;
+  sla: SLA | null;
+  slaStartedAt: string | null;
   subTasks: Partial<Task>[];
   notes?: Note[];
   objectives?: Objective[];
 }
+
+export type SLA = "CRITICAL" | "NORMAL";
 
 export type RecurrenceType = "DAILY" | "WEEKLY" | "MONTHLY" | "PARENT";
 

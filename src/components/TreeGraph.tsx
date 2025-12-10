@@ -15,8 +15,11 @@ import {
   Trash2,
   GitBranchPlus,
   UserPlus,
+  Repeat,
   Eye,
+  TriangleAlert,
 } from "lucide-react";
+import { getTaskSlaIcon } from "./TaskSlaIcon";
 
 interface TreeNode {
   task: Task;
@@ -37,6 +40,7 @@ interface TreeGraphProps {
   openDeleteTask: (task: Task) => void;
   openAssignTask: (task: Task) => void;
   openDetailsModal?: (task: Task) => void;
+  openSlaModal?: () => void;
 }
 
 const statusColors = {
@@ -67,6 +71,7 @@ export default function TreeGraph({
   openDeleteTask,
   openAssignTask,
   openDetailsModal,
+  openSlaModal,
 }: TreeGraphProps) {
   const [localTasks, setLocalTasks] = useState<Task[] | null>();
   const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
@@ -293,7 +298,17 @@ export default function TreeGraph({
                 <UserPlus className="h-4 w-4" />
               </Button>
             </div>
+
             <div className="flex space-x-2 justify-end">
+              <Button
+                variant="outline"
+                className="text-yellow-700"
+                size="sm"
+                title="Set SLA"
+                onClick={() => openSlaModal!()}
+              >
+                <TriangleAlert className="h-4 w-4 text-yellow-700" />
+              </Button>
               <Button
                 variant="outline"
                 className="text-red-500"
@@ -413,7 +428,13 @@ export default function TreeGraph({
                             : ""
                         }`}
                       >
-                        {node.task.title}
+                        <div className="flex space-x-2 items-center">
+                          {node.task.sla !== null && getTaskSlaIcon(node.task)}
+                          {node.task.title}
+                          {node.task.recurrenceType !== null && (
+                            <Repeat className="h-4 w-4 ml-2 flex-shrink-0" />
+                          )}
+                        </div>
                       </h3>
 
                       {/* Description */}
