@@ -35,7 +35,7 @@ import {
   getStatusLabel,
   formatDeadline,
 } from "@/lib/task-status-utils";
-import { getRemainingSLA } from "@/lib/task-utils";
+import { getRemainingSLA, formatTimeRemaining } from "@/lib/sla-utils";
 import { type Task } from "@/types/task";
 
 type MyTasksTableProps = {
@@ -121,10 +121,12 @@ function TaskRow({
                 }
               >
                 SLA:&nbsp;
-                {getRemainingSLA(task.slaStartedAt!, task.sla).expired
+                {getRemainingSLA(task.slaStartedAt!, task.sla!)?.isExpired
                   ? "Expired"
-                  : getRemainingSLA(task.slaStartedAt!, task.sla)
-                      .remainingHours + " hours"}
+                  : formatTimeRemaining(
+                      getRemainingSLA(task.slaStartedAt!, task.sla!)
+                        ?.remainingTime || 0,
+                    )}
               </span>
             )}
           </div>

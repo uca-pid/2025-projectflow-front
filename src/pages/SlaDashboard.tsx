@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  calculateSLAStatus,
+  getRemainingSLA,
   calculateSLACompliance,
   formatTimeRemaining,
 } from "@/lib/sla-utils";
@@ -86,7 +86,7 @@ export function SLADashboard() {
 
       const compliance = calculateSLACompliance(allTasksInProject);
       const expiredTasks = allTasksInProject.filter((task) => {
-        const status = calculateSLAStatus(task);
+        const status = getRemainingSLA(task.slaStartedAt!, task.sla!);
         return status?.isExpired;
       });
 
@@ -187,12 +187,21 @@ export function SLADashboard() {
                         {metric.withinSLA}/{metric.subtasksWithSLA} tasks
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={metric.percentage} className="flex-1" />
-                      <span className="text-sm font-medium min-w-[3rem] text-right">
-                        {metric.percentage.toFixed(0)}%
-                      </span>
-                    </div>
+                    {metric.subtasksWithSLA != 0 ? (
+                      <div className="flex items-center gap-2">
+                        <Progress
+                          value={metric.percentage}
+                          className="flex-1"
+                        />
+                        <span className="text-sm font-medium min-w-[3rem] text-right">
+                          {metric.percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-medium min-w-[3rem] text-right">
+                        No SLA Tasks
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -237,13 +246,26 @@ export function SLADashboard() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
-                          {metric.percentage.toFixed(1)}%
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {metric.withinSLA} of {metric.subtasksWithSLA} tasks
-                        </p>
-                        <Progress value={metric.percentage} className="mt-3" />
+                        {metric.withinSLA != 0 &&
+                        metric.subtasksWithSLA != 0 ? (
+                          <>
+                            <div className="text-2xl font-bold text-green-600">
+                              {metric.percentage.toFixed(1)}%
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {metric.withinSLA} of {metric.subtasksWithSLA}{" "}
+                              tasks
+                            </p>
+                            <Progress
+                              value={metric.percentage}
+                              className="mt-3"
+                            />
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground mt-1 text-center">
+                            No tasks within SLA
+                          </p>
+                        )}
                       </CardContent>
                     </Card>
 
@@ -254,18 +276,27 @@ export function SLADashboard() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold text-red-600">
-                          {metric.expiredSLA}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Tasks past deadline
-                        </p>
-                        <Progress
-                          value={
-                            (metric.expiredSLA / metric.subtasksWithSLA) * 100
-                          }
-                          className="mt-3"
-                        />
+                        {metric.expiredSLA != 0 ? (
+                          <>
+                            <div className="text-2xl font-bold text-red-600">
+                              {metric.expiredSLA}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Tasks past deadline
+                            </p>
+                            <Progress
+                              value={
+                                (metric.expiredSLA / metric.subtasksWithSLA) *
+                                100
+                              }
+                              className="mt-3"
+                            />
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground mt-1 text-center">
+                            No expired SLA tasks
+                          </p>
+                        )}
                       </CardContent>
                     </Card>
 
@@ -312,7 +343,10 @@ export function SLADashboard() {
                           </TableHeader>
                           <TableBody>
                             {metric.expiredTasks.map((task) => {
-                              const slaStatus = calculateSLAStatus(task);
+                              const slaStatus = getRemainingSLA(
+                                task.slaStartedAt!,
+                                task.sla!,
+                              );
                               const overdueMs = slaStatus
                                 ? Math.abs(slaStatus.remainingTime)
                                 : 0;

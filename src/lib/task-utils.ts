@@ -146,47 +146,6 @@ export async function validateTaskUpdate(
   return { valid: true, message: "Task update is valid" };
 }
 
-// SLA Utilities
-export function getRemainingSLA(startedAt: string | Date, slaLevel: string) {
-  const start = new Date(startedAt);
-  const now = new Date();
-
-  let due: Date;
-
-  if (slaLevel === "CRITICAL") {
-    due = new Date(start.getTime() + 48 * 60 * 60 * 1000);
-  } else if (slaLevel === "NORMAL") {
-    due = addBusinessDays(start, 5);
-  } else {
-    throw new Error("Invalid SLA level. Use CRITICAL or NORMAL.");
-  }
-
-  const remainingMs = due.getTime() - now.getTime();
-
-  return {
-    dueDate: due,
-    remainingMs,
-    remainingHours: Math.round(remainingMs / (1000 * 60 * 60)),
-    remainingMinutes: Math.round(remainingMs / (1000 * 60)),
-    expired: remainingMs <= 0,
-  };
-}
-
-function addBusinessDays(date: string | Date, days: number) {
-  const result = new Date(date);
-  let added = 0;
-
-  while (added < days) {
-    result.setDate(result.getDate() + 1);
-    const day = result.getDay();
-    if (day !== 0 && day !== 6) {
-      added++;
-    }
-  }
-
-  return result;
-}
-
 export function tasksToCsv(tasks: Task[]) {
   const transformed = tasks.map((t) => ({
     Title: t.title,

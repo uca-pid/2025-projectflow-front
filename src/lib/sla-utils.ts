@@ -1,30 +1,10 @@
 import type { Task } from "@/types/task";
-import { CircleAlert, TriangleAlert } from "lucide-react";
-import { getRemainingSLA } from "./task-utils";
 
 export interface SLAStatus {
   isExpired: boolean;
   remainingTime: number;
   remainingHours: number;
   dueDate: Date;
-}
-
-export function calculateSLAStatus(task: Task): SLAStatus | null {
-  if (!task.sla || !task.slaStartedAt) {
-    return null;
-  }
-
-  try {
-    const result = getRemainingSLA(task.slaStartedAt, task.sla);
-    return {
-      isExpired: result.expired,
-      remainingTime: result.remainingMs,
-      remainingHours: result.remainingHours,
-      dueDate: result.dueDate,
-    };
-  } catch {
-    return null;
-  }
 }
 
 export function formatTimeRemaining(ms: number): string {
@@ -59,7 +39,7 @@ export function calculateSLACompliance(tasks: Task[]): {
   }
 
   const expiredTasks = tasksWithSLA.filter((task) => {
-    const status = calculateSLAStatus(task);
+    const status = getRemainingSLA(task.slaStartedAt!, task.sla!);
     return status?.isExpired;
   });
 
@@ -73,4 +53,54 @@ export function calculateSLACompliance(tasks: Task[]): {
     expiredSLA,
     percentage,
   };
+}
+
+export function getRemainingSLA(
+  startedAt: string | Date,
+  slaLevel: string,
+): SLAStatus | null {
+  if (!startedAt || !slaLevel) {
+    return null;
+  }
+  try {
+    const start = new Date(startedAt);
+    const now = new Date();
+
+    let due: Date;
+
+    if (slaLevel === "CRITICAL") {
+      due = new Date(start.getTime() + 48 * 60 * 60 * 1000);
+    } else if (slaLevel === "NORMAL") {
+      due = addBusinessDays(start, 5);
+    } else {
+      throw new Error("Invalid SLA level. Use CRITICAL or NORMAL.");
+    }
+
+    const remainingMs = due.getTime() - now.getTime();
+
+    return {
+      dueDate: due,
+      remainingTime: remainingMs,
+      remainingHours: Math.round(remainingMs / (1000 * 60 * 60)),
+      isExpired: remainingMs <= 0,
+    };
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
+}
+
+function addBusinessDays(date: string | Date, days: number) {
+  const result = new Date(date);
+  let added = 0;
+
+  while (added < days) {
+    result.setDate(result.getDate() + 1);
+    const day = result.getDay();
+    if (day !== 0 && day !== 6) {
+      added++;
+    }
+  }
+
+  return result;
 }
